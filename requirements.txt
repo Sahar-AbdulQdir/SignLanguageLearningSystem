@@ -4,3 +4,6 @@ scikit-learn
 matplotlib
 streamlit
 pandas
+mediapipe
+pillow
+customtkinter

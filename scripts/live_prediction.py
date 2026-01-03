@@ -2,11 +2,18 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import pickle
+import os
 
-# Load trained model
-with open("models/knn_landmark_model_right.pkl", "rb") as f:
-    model = pickle.load(f)
+# =======================
+# LOAD COMBINED MODEL
+# =======================
+with open("models/knn_combined_model.pkl", "rb") as f:
+    model_data = pickle.load(f)
+    model = model_data["model"]
 
+# =======================
+# MEDIAPIPE SETUP
+# =======================
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
     static_image_mode=False,
@@ -17,6 +24,9 @@ hands = mp_hands.Hands(
 
 cap = cv2.VideoCapture(0)
 
+# =======================
+# LIVE PREDICTION LOOP
+# =======================
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -30,24 +40,20 @@ while True:
         hand = result.multi_hand_landmarks[0]
         handedness = result.multi_handedness[0].classification[0].label
 
-        if len(hand.landmark) != 21:
-            continue
-
         landmarks = []
-
         for lm in hand.landmark:
             landmarks.extend([lm.x, lm.y, lm.z])
 
         # Normalize to wrist
         base_x, base_y, base_z = landmarks[0:3]
-        for i in range(0, len(landmarks), 3):
+        for i in range(0, 63, 3):
             landmarks[i]   -= base_x
             landmarks[i+1] -= base_y
             landmarks[i+2] -= base_z
 
-        # 👉 FORCE RIGHT HAND
+        # Force right hand
         if handedness == "Left":
-            for i in range(0, len(landmarks), 3):
+            for i in range(0, 63, 3):
                 landmarks[i] *= -1
 
         # Scale normalization
@@ -56,6 +62,7 @@ while True:
         landmarks = landmarks / scale
 
         X_input = landmarks.reshape(1, -1)
+
         pred = model.predict(X_input)[0]
         confidence = np.max(model.predict_proba(X_input)) * 100
 
@@ -73,7 +80,7 @@ while True:
             frame, hand, mp_hands.HAND_CONNECTIONS
         )
 
-    cv2.imshow("Sign Recognition (Landmarks)", frame)
+    cv2.imshow("Sign Recognition (Letters + Words)", frame)
     if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 
