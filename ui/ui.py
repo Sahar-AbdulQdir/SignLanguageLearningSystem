@@ -1,512 +1,780 @@
+import tkinter as tk
+import customtkinter as ct
+from PIL import Image, ImageTk
 import cv2
-import numpy as np
 import mediapipe as mp
+import numpy as np
 import pickle
-import os
-from tkinter import Tk, filedialog
+from tkinter import PhotoImage, filedialog, Button
+import json
+ct.set_appearance_mode("dark")
 
-# -------------------------------
-# Load trained model
-# -------------------------------
-MODEL_PATH = "models/knn_landmark_model_right.pkl"
-with open("models/knn_landmark_model_right.pkl", "rb") as f:
-    data = pickle.load(f)
+# =======================
+# LOAD MODEL
+# =======================
+try:
+    # Load the combined model
+    with open("models/knn_combined_model.pkl", "rb") as f:
+        data = pickle.load(f)
+    model = data["model"]
+    all_classes = data["all_classes"]  # This now includes words
+    
+    # Load configuration
+    with open("config/signs_config.json", "r") as f:
+        config = json.load(f)
+    
+    print(f"Model loaded successfully. Classes: {all_classes}")
+    print(f"Available signs: {len(all_classes)} total")
+    print(f"Words: {config['words']}")
+except Exception as e:
+    print(f"Error loading model: {e}")
+    # Fallback to original classes plus some common words
+    all_classes = ["A", "B", "C", "1", "2", "3", "HELLO", "THANK YOU", "YES", "NO"]
+    config = {
+        "letters_numbers": ["A", "B", "C", "1", "2", "3"],
+        "words": ["HELLO", "THANK YOU", "YES", "NO"]
+    }
 
-model = data["model"]
-X_train = data["X"]
-y_train = data["y"]
-
-# -------------------------------
-# Backgrounds
-# -------------------------------
-bg_home = np.full((720, 1280, 3), (200, 200, 200), dtype=np.uint8)
-bg_learn = np.full((720, 1280, 3), (180, 220, 255), dtype=np.uint8)
-bg_translate = np.full((720, 1280, 3), (220, 255, 180), dtype=np.uint8)
-
-# Draw home buttons
-cv2.rectangle(bg_home, (100, 200), (400, 300), (0, 255, 0), -1)
-cv2.putText(bg_home, "LEARN", (180, 260),
-            cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 3)
-
-cv2.rectangle(bg_home, (500, 200), (800, 300), (255, 0, 0), -1)
-cv2.putText(bg_home, "TRANSLATE", (520, 260),
-            cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 0), 3)
-
-# -------------------------------
-# MediaPipe Hands setup
-# -------------------------------
+# =======================
+# MEDIAPIPE SETUP
+# =======================
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
     static_image_mode=False,
     max_num_hands=1,
-    min_detection_confidence=0.7,
-    min_tracking_confidence=0.7
+    min_detection_confidence=0.5,  # Lowered for better detection
+    min_tracking_confidence=0.5
 )
 
-# -------------------------------
-# Globals
-# -------------------------------
-page = "home"
-letter = "A"
-confidence = 0
-similarity = 0
-prediction_made = False
+# =======================
+# HELPERS
+# =======================
+def extract_landmarks(frame):
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    result = hands.process(rgb)
 
-letters = list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
-letter_buttons = {}
+    if not result.multi_hand_landmarks:
+        print("No hand detected!")
+        return None
 
-start_x, start_y = 50, 50
-btn_w, btn_h = 80, 80
-gap = 20
-
-for idx, ltr in enumerate(letters):
-    x = start_x + (idx % 7) * (btn_w + gap)
-    y = start_y + (idx // 7) * (btn_h + gap)
-    letter_buttons[ltr] = (x, y, x + btn_w, y + btn_h)
-
-uploaded_images = []  # For Translate page
-
-# -------------------------------
-# Mouse callback
-# -------------------------------
-def mouse_click(event, x, y, flags, param):
-    global page, letter, uploaded_images, prediction_made
-
-    if event == cv2.EVENT_LBUTTONDOWN:
-
-        if page == "home":
-            if 100 <= x <= 400 and 200 <= y <= 300:
-                page = "learn"
-                letter = "A"
-                prediction_made = False
-            elif 500 <= x <= 800 and 200 <= y <= 300:
-                page = "translate"
-
-        elif page == "learn":
-            for ltr, (x1, y1, x2, y2) in letter_buttons.items():
-                if x1 <= x <= x2 and y1 <= y <= y2:
-                    letter = ltr
-                    prediction_made = False   # reset when letter changes
-
-            if 50 <= x <= 200 and 620 <= y <= 700:
-                page = "home"
-                prediction_made = False
-
-            if 850 <= x <= 1000 and 620 <= y <= 700:
-                current_index = letters.index(letter)
-                letter = letters[(current_index + 1) % len(letters)]
-                prediction_made = False
-
-        elif page == "translate":
-            # Back button
-            if 50 <= x <= 200 and 500 <= y <= 600:
-                page = "home"
-
-            # Upload button
-            if 500 <= x <= 700 and 500 <= y <= 600:
-                Tk().withdraw()
-                file_paths = filedialog.askopenfilenames(
-                    title="Select Images",
-                    filetypes=[("Image files", "*.png;*.jpg;*.jpeg")]
-                )
-                uploaded_images = list(file_paths)
-
-cv2.namedWindow("Sign Language App")
-cv2.setMouseCallback("Sign Language App", mouse_click)
-
-# -------------------------------
-# Video capture
-# -------------------------------
-cap = cv2.VideoCapture(0)
-if not cap.isOpened():
-    print("WARNING: Cannot open camera. Learn/Translate camera features will be disabled.")
-
-# -------------------------------
-# Main loop
-# -------------------------------
-while True:
-    ret, cam_frame = False, None
-
-    if cap.isOpened():
-        ret, cam_frame = cap.read()
-        if ret:
-            cam_frame = cv2.flip(cam_frame, 1)
-
-    # -------------------------------
-    # HOME PAGE
-    # -------------------------------
-    if page == "home":
-        frame = bg_home.copy()
-        
-        # Add title
-        cv2.putText(frame, "SIGN LANGUAGE LEARNING APP", (350, 100),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 0), 3)
-        cv2.putText(frame, "Choose a mode to begin", (450, 150),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (100, 100, 100), 2)
-
-    # -------------------------------
-    # LEARN PAGE
-    # -------------------------------
-    elif page == "learn":
-        frame = bg_learn.copy()
-        prediction_made = False
-        
-        # Title
-        cv2.putText(frame, "LEARN MODE - Select a letter and imitate it", (300, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2)
-        
-        # Draw letter buttons with highlight for selected
-        for ltr, (x1, y1, x2, y2) in letter_buttons.items():
-            # Highlight selected letter
-            if ltr == letter:
-                cv2.rectangle(frame, (x1-5, y1-5), (x2+5, y2+5), (0, 255, 0), 3)
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 230, 0), -1)
-            else:
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 200, 200), -1)
-            
-            cv2.putText(frame, ltr, (x1 + 20, y1 + 50),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-        
-        # LEFT: Reference image section
-        cv2.rectangle(frame, (95, 95), (405, 405), (0, 0, 0), 2)  # Border
-        cv2.putText(frame, f"REFERENCE: {letter}", (100, 85),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-        
-        # Load and display reference sign image
-        sign_path = f"Images/sign_images/{letter}.jpg"
-        if os.path.exists(sign_path):
-            sign_img = cv2.imread(sign_path)
-            if sign_img is not None:
-                sign_img = cv2.resize(sign_img, (300, 300))
-                frame[100:400, 100:400] = sign_img
-                
-                # Add "Imitate this sign" text
-                cv2.putText(frame, "Imitate this sign", (150, 420),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 100, 200), 2)
-            else:
-                cv2.putText(frame, "Image load error!", (150, 250),
-                            cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        else:
-            cv2.putText(frame, f"{letter}.jpg not found", (120, 250),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-            cv2.putText(frame, "Place images in sign_images/", (80, 290),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-        
-        # Process camera feed for prediction
-        if ret and cam_frame is not None:
-            rgb = cv2.cvtColor(cam_frame, cv2.COLOR_BGR2RGB)
-            result = hands.process(rgb)
-            
-            if result.multi_hand_landmarks and result.multi_handedness:
-                hand = result.multi_hand_landmarks[0]
-                handedness = result.multi_handedness[0].classification[0].label
-                
-                if len(hand.landmark) == 21:
-                    landmarks = []
-                    for lm in hand.landmark:
-                        landmarks.extend([lm.x, lm.y, lm.z])
-                    
-                    # Normalize landmarks
-                    base_x, base_y, base_z = landmarks[0:3]
-                    for i in range(0, len(landmarks), 3):
-                        landmarks[i] -= base_x
-                        landmarks[i + 1] -= base_y
-                        landmarks[i + 2] -= base_z
-                    
-                    if handedness == "Left":
-                        for i in range(0, len(landmarks), 3):
-                            landmarks[i] *= -1
-                    
-                    landmarks = np.array(landmarks)
-                    scale = np.linalg.norm(landmarks[3:6]) + 1e-6
-                    landmarks = landmarks / scale
-                    
-                    X_input = landmarks.reshape(1, -1)
-                    pred = model.predict(X_input)[0]
-                    confidence = np.max(model.predict_proba(X_input)) * 100
-                    prediction_made = True
-                    
-                    # Calculate similarity to selected letter
-                    if letter in model.classes_:
-                        probas = model.predict_proba(X_input)[0]
-                        letter_index = list(model.classes_).index(letter)
-                        similarity = probas[letter_index] * 100
-                    
-                    # Draw hand landmarks on camera feed
-                    mp.solutions.drawing_utils.draw_landmarks(
-                        cam_frame, hand, mp_hands.HAND_CONNECTIONS
-                    )
-                    
-                    # Display camera feed
-                    cam_display = cv2.resize(cam_frame, (300, 300))
-                    frame[420:720, 100:400] = cam_display
-                    
-                    # Add camera feed border and label
-                    cv2.rectangle(frame, (95, 415), (405, 725), (0, 0, 0), 2)
-                    cv2.putText(frame, "YOUR CAMERA", (100, 410),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-                    cv2.putText(frame, "Show your hand here", (140, 450),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 100, 100), 1)
-            else:
-                # No hand detected - show placeholder
-                cv2.rectangle(frame, (95, 415), (405, 725), (200, 200, 200), -1)
-                cv2.rectangle(frame, (95, 415), (405, 725), (0, 0, 0), 2)
-                cv2.putText(frame, "YOUR CAMERA", (100, 410),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-                cv2.putText(frame, "Show your hand to begin", (140, 500),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (100, 100, 100), 2)
-                cv2.putText(frame, "Make sure hand is visible", (130, 540),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (100, 100, 100), 1)
-        else:
-            # Camera not available
-            cv2.rectangle(frame, (95, 415), (405, 725), (200, 200, 200), -1)
-            cv2.rectangle(frame, (95, 415), (405, 725), (0, 0, 0), 2)
-            cv2.putText(frame, "CAMERA UNAVAILABLE", (110, 500),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
-        
-        # RIGHT: Feedback panel
-        cv2.rectangle(frame, (450, 100), (800, 400), (250, 250, 250), -1)
-        cv2.rectangle(frame, (450, 100), (800, 400), (0, 0, 0), 2)
-        cv2.putText(frame, "PERFORMANCE FEEDBACK", (460, 130),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2)
-        
-        if prediction_made:
-            # Get similarity to selected letter
-            if letter in model.classes_:
-                y_pos = 170
-                lines = []
-                colors = []
-                
-                # Line 1: Selected letter
-                lines.append(f"Selected Letter: {letter}")
-                colors.append((0, 0, 255))
-                
-                # Line 2: Predicted letter
-                lines.append(f"Predicted: {pred}")
-                colors.append((0, 200, 0) if pred == letter else (0, 0, 255))
-                
-                # Line 3: Match status
-                match_status = "CORRECT MATCH ✓" if pred == letter else "NOT MATCHING ✗"
-                lines.append(match_status)
-                colors.append((0, 200, 0) if pred == letter else (0, 0, 255))
-                
-                # Line 4: Similarity score
-                lines.append(f"Similarity Score: {similarity:.1f}%")
-                if similarity > 80:
-                    colors.append((0, 200, 0))
-                elif similarity > 60:
-                    colors.append((0, 150, 255))
-                else:
-                    colors.append((0, 0, 255))
-                
-                # Line 5: Overall confidence
-                lines.append(f"Overall Confidence: {confidence:.1f}%")
-                colors.append((100, 100, 100))
-                
-                # Display all lines
-                for i, (line, color) in enumerate(zip(lines, colors)):
-                    cv2.putText(frame, line, (470, y_pos + i * 35),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2)
-                
-                # Progress bar for similarity
-                bar_y = 330
-                cv2.rectangle(frame, (470, bar_y), (780, bar_y + 20), (200, 200, 200), -1)
-                bar_width = int(similarity * 3.1)  # Scale to ~310 pixels for 100%
-                
-                # Color based on similarity
-                if similarity > 80:
-                    bar_color = (0, 255, 0)
-                    feedback = "Excellent! Perfect match!"
-                elif similarity > 60:
-                    bar_color = (0, 200, 200)
-                    feedback = "Good! Keep practicing"
-                elif similarity > 40:
-                    bar_color = (255, 200, 0)
-                    feedback = "Getting closer..."
-                else:
-                    bar_color = (255, 100, 0)
-                    feedback = "Try to match the reference better"
-                
-                cv2.rectangle(frame, (470, bar_y), (470 + bar_width, bar_y + 20), bar_color, -1)
-                
-                # Add percentage text on bar
-                cv2.putText(frame, f"{similarity:.0f}%", 
-                            (470 + bar_width - 40 if bar_width > 40 else 470, bar_y + 15),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
-                
-                # Feedback message
-                cv2.putText(frame, feedback, (470, 370),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, bar_color, 2)
-                
-        else:
-            # No prediction yet
-            cv2.putText(frame, "Waiting for hand detection...", (470, 200),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (100, 100, 100), 2)
-            cv2.putText(frame, "Show your hand to the camera", (470, 240),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (100, 100, 100), 2)
-            cv2.putText(frame, "and try to match the reference", (470, 280),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (100, 100, 100), 2)
-            cv2.putText(frame, "sign on the left.", (470, 320),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (100, 100, 100), 2)
-        
-        # Back button
-        cv2.rectangle(frame, (50, 620), (200, 700), (0, 0, 255), -1)
-        cv2.putText(frame, "BACK", (70, 680),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        
-        # Next button
-        cv2.rectangle(frame, (850, 620), (1000, 700), (0, 255, 0), -1)
-        cv2.putText(frame, "NEXT", (870, 680),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-        cv2.putText(frame, "Try next letter", (840, 720),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 100, 0), 1)
-
-    # -------------------------------
-    # TRANSLATE PAGE
-    # -------------------------------
-    elif page == "translate":
-        frame = bg_translate.copy()
-        
-        # Title
-        cv2.putText(frame, "TRANSLATE MODE", (500, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 3)
-        cv2.putText(frame, "Upload images or use camera to translate signs", (350, 70),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (100, 100, 100), 2)
-        
-        # Upload button
-        cv2.rectangle(frame, (500, 500), (700, 600), (0, 100, 200), -1)
-        cv2.putText(frame, "UPLOAD", (510, 560),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        cv2.putText(frame, "Select sign images", (500, 620),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), 1)
-        
-        # Display uploaded images
-        y_offset = 50
-        for idx, path in enumerate(uploaded_images[:6]):
-            img = cv2.imread(path)
-            if img is not None:
-                img = cv2.resize(img, (150, 150))
-                x_offset = 50 + (idx % 3) * 160
-                y_offset = 100 + (idx // 3) * 170
-                frame[y_offset:y_offset + 150, x_offset:x_offset + 150] = img
-                
-                # Predict and display result on image
-                img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                hands_img = mp.solutions.hands.Hands(
-                    static_image_mode=True,
-                    max_num_hands=1,
-                    min_detection_confidence=0.7
-                )
-                res = hands_img.process(img_rgb)
-                
-                if res.multi_hand_landmarks:
-                    hand = res.multi_hand_landmarks[0]
-                    landmarks = []
-                    
-                    for lm in hand.landmark:
-                        landmarks.extend([lm.x, lm.y, lm.z])
-                    
-                    base_x, base_y, base_z = landmarks[0:3]
-                    for i in range(0, len(landmarks), 3):
-                        landmarks[i] -= base_x
-                        landmarks[i + 1] -= base_y
-                        landmarks[i + 2] -= base_z
-                    
-                    landmarks = np.array(landmarks)
-                    scale = np.linalg.norm(landmarks[3:6]) + 1e-6
-                    landmarks = landmarks / scale
-                    
-                    X_input = landmarks.reshape(1, -1)
-                    pred = model.predict(X_input)[0]
-                    conf = np.max(model.predict_proba(X_input)) * 100
-                    
-                    # Draw prediction on image
-                    cv2.putText(frame, f"{pred} ({conf:.0f}%)",
-                                (x_offset, y_offset + 170),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-        
-        # Camera feed for real-time translation
-        if ret and cam_frame is not None:
-            # Display camera feed
-            cam_display = cv2.resize(cam_frame, (300, 300))
-            frame[100:400, 600:900] = cam_display
-            
-            cv2.rectangle(frame, (595, 95), (905, 405), (0, 0, 0), 2)
-            cv2.putText(frame, "LIVE CAMERA TRANSLATION", (600, 85),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
-            
-            # Process for translation
-            rgb = cv2.cvtColor(cam_frame, cv2.COLOR_BGR2RGB)
-            result = hands.process(rgb)
-            
-            if result.multi_hand_landmarks and result.multi_handedness:
-                hand = result.multi_hand_landmarks[0]
-                handedness = result.multi_handedness[0].classification[0].label
-                
-                if len(hand.landmark) == 21:
-                    landmarks = []
-                    for lm in hand.landmark:
-                        landmarks.extend([lm.x, lm.y, lm.z])
-                    
-                    base_x, base_y, base_z = landmarks[0:3]
-                    for i in range(0, len(landmarks), 3):
-                        landmarks[i] -= base_x
-                        landmarks[i + 1] -= base_y
-                        landmarks[i + 2] -= base_z
-                    
-                    if handedness == "Left":
-                        for i in range(0, len(landmarks), 3):
-                            landmarks[i] *= -1
-                    
-                    landmarks = np.array(landmarks)
-                    scale = np.linalg.norm(landmarks[3:6]) + 1e-6
-                    landmarks = landmarks / scale
-                    
-                    X_input = landmarks.reshape(1, -1)
-                    pred = model.predict(X_input)[0]
-                    conf = np.max(model.predict_proba(X_input)) * 100
-                    
-                    # Draw landmarks
-                    mp.solutions.drawing_utils.draw_landmarks(
-                        cam_display, hand, mp_hands.HAND_CONNECTIONS
-                    )
-                    
-                    # Display prediction
-                    cv2.putText(frame, f"Detected: {pred}", (600, 430),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 3)
-                    cv2.putText(frame, f"Confidence: {conf:.1f}%", (600, 470),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-            
-            else:
-                cv2.putText(frame, "Show sign to camera", (620, 430),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (100, 100, 100), 2)
-        
-        # Back button
-        cv2.rectangle(frame, (50, 500), (200, 600), (0, 0, 255), -1)
-        cv2.putText(frame, "BACK", (70, 560),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        
-        # Instructions
-        cv2.putText(frame, "Instructions:", (50, 650),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
-        cv2.putText(frame, "1. Upload images or use camera", (50, 680),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 100, 100), 1)
-        cv2.putText(frame, "2. System will detect and translate signs", (50, 700),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (100, 100, 100), 1)
-
-    # -------------------------------
-    # Show frame
-    # -------------------------------
-    cv2.imshow("Sign Language App", frame)
+    hand = result.multi_hand_landmarks[0]
     
-    # Display FPS (optional)
-    if page != "home":
-        fps = cap.get(cv2.CAP_PROP_FPS) if cap.isOpened() else 0
-        cv2.putText(frame, f"FPS: {int(fps)}", (1150, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 2)
+    if not result.multi_handedness:
+        print("No handedness info!")
+        return None
+        
+    handedness = result.multi_handedness[0].classification[0].label
+    print(f"Detected hand: {handedness}")
 
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        break
+    landmarks = []
+    for lm in hand.landmark:
+        landmarks.extend([lm.x, lm.y, lm.z])
 
-cap.release()
-cv2.destroyAllWindows()
+    # Normalize to wrist
+    base_x, base_y, base_z = landmarks[0:3]
+    for i in range(0, len(landmarks), 3):
+        landmarks[i]   -= base_x
+        landmarks[i+1] -= base_y
+        landmarks[i+2] -= base_z
+
+    # FORCE RIGHT HAND (as in training)
+    if handedness == "Left":
+        print("Left hand detected, flipping to right...")
+        for i in range(0, len(landmarks), 3):
+            landmarks[i] *= -1
+
+    landmarks = np.array(landmarks)
+    
+    # Scale normalization (using distance between wrist and index finger MCP)
+    if len(landmarks) >= 6:  # Make sure we have enough landmarks
+        scale = np.linalg.norm(landmarks[3:6]) + 1e-6
+        landmarks = landmarks / scale
+    else:
+        print("Not enough landmarks for scaling!")
+        return None
+        
+    return landmarks
+
+def predict_landmarks(landmarks):
+    try:
+        X = landmarks.reshape(1, -1)
+        pred = model.predict(X)[0]
+        proba = model.predict_proba(X)[0]
+        conf = np.max(proba) * 100
+        
+        # Get probability for each class
+        prob_dict = {}
+        for i, class_name in enumerate(all_classes):
+            prob_dict[class_name] = proba[i] * 100
+        
+        return pred, conf, prob_dict
+    except Exception as e:
+        print(f"Prediction error: {e}")
+        # Return dummy values for testing
+        dummy_probs = {cls: 0 for cls in all_classes}
+        dummy_probs["A"] = 100  # Default to A for testing
+        return "A", 100, dummy_probs
+
+# =======================
+# APP SETUP
+# =======================
+root = ct.CTk()
+root.geometry("1200x700")
+root.title("Sign Language App")
+
+# =======================
+# FRAMES
+# =======================
+Start_frame = ct.CTkFrame(root)
+Home_frame = ct.CTkFrame(root)
+Learn_frame = ct.CTkFrame(root)
+Translate_frame = ct.CTkFrame(root)
+Upload_frame = ct.CTkFrame(root)
+
+for frame in (Start_frame, Home_frame, Learn_frame, Translate_frame, Upload_frame):
+    frame.place(relwidth=1, relheight=1)
+
+# =======================
+# BACKGROUND HANDLER
+# =======================
+def set_bg(frame, path):
+    try:
+        img = Image.open(path)
+        bg = tk.Label(frame)
+        bg.place(relwidth=1, relheight=1)
+
+        def resize(e):
+            resized = img.resize((e.width, e.height), Image.Resampling.LANCZOS)
+            photo = ImageTk.PhotoImage(resized)
+            bg.configure(image=photo)
+            bg.image = photo
+
+        frame.bind("<Configure>", resize)
+    except:
+        # If background image fails, just set solid color
+        frame.configure(bg="#2b2b2b")
+
+set_bg(Start_frame, "Images/Backgrounds/Start_page.png")
+set_bg(Home_frame, "Images/Backgrounds/Home_page.png")
+set_bg(Learn_frame, "Images/Backgrounds/Learn_page.png")
+set_bg(Translate_frame, "Images/Backgrounds/Translate_page.png")
+set_bg(Upload_frame, "Images/Backgrounds/Upload_page.png")
+
+# =======================
+# FRAME SWITCHING
+# =======================
+def switch_frame(frame):
+    # Stop camera if running
+    if hasattr(root, 'camera_active') and root.camera_active:
+        stop_camera()
+    frame.tkraise()
+
+# =======================
+# CAMERA FUNCTIONS
+# =======================
+def start_camera_in_frame(frame_widget, show_prediction=False, target_sign=None):
+    """Start camera and display it inside the given widget"""
+    if hasattr(root, 'camera_active') and root.camera_active:
+        stop_camera()
+    
+    root.camera_active = True
+    root.camera_widget = frame_widget
+    root.show_prediction = show_prediction
+    root.target_sign = target_sign
+    
+    # Create video label if it doesn't exist
+    if not hasattr(frame_widget, 'video_label'):
+        frame_widget.video_label = tk.Label(frame_widget, bg="white")
+        frame_widget.video_label.place(x=1100, y=200, width=500, height=500)
+    
+    # Create feedback label for Learn mode
+    if target_sign and not hasattr(frame_widget, 'feedback_label'):
+        frame_widget.feedback_label = ct.CTkLabel(
+            frame_widget,
+            text="",
+            font=("Arial", 16),
+            text_color="black",
+            bg_color="#FFFFFF"
+        )
+        frame_widget.feedback_label.place(x=710, y=500, width=300, height=50)
+    
+    # Create top predictions frame
+    # feedback for Learn mode 
+    if target_sign and not hasattr(frame_widget, 'top_predictions_frame'):
+        frame_widget.top_predictions_frame = ct.CTkFrame(frame_widget,
+                                                        width=270,
+                                                        height=60,
+                                                        border_color="#000000",
+                                                        fg_color="#FFFFFF")
+        frame_widget.top_predictions_frame.place(x=755, y=505)
+        
+        # Title
+        ct.CTkLabel(
+            frame_widget.top_predictions_frame,
+            text="Top Predictions:",
+            font=("Arial", 14, "bold")
+        ).place(x=100, y=500)
+        
+        # Create prediction labels
+        frame_widget.prediction_labels = []
+        for i in range(3):
+            label = ct.CTkLabel(
+                frame_widget.top_predictions_frame,
+                text="",
+                font=("Arial", 12)
+            )
+            label.place(x=5, y=15)
+            frame_widget.prediction_labels.append(label)
+    
+    # Debug label
+    if target_sign and not hasattr(frame_widget, 'debug_label'):
+        frame_widget.debug_label = ct.CTkLabel(
+            frame_widget,
+            text="",
+            font=("Arial", 10),
+            text_color="black"
+        )
+        frame_widget.debug_label.place(x=650, y=100, width=500, height=30)
+    
+    # Start video capture
+    root.cap = cv2.VideoCapture(0)
+    if not root.cap.isOpened():
+        print("Error: Could not open camera")
+        if hasattr(frame_widget, 'debug_label'):
+            frame_widget.debug_label.configure(text="Camera error!")
+        return
+    
+    update_camera_frame()
+
+def update_camera_frame():
+    if not hasattr(root, 'camera_active') or not root.camera_active:
+        return
+    
+    ret, frame = root.cap.read()
+    if not ret:
+        print("Failed to grab frame")
+        return
+    
+    frame = cv2.flip(frame, 1)
+    
+    # Draw hand landmarks for visual feedback
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    result = hands.process(rgb)
+    
+    hand_detected = False
+    if result.multi_hand_landmarks:
+        hand_detected = True
+        for hand_landmarks in result.multi_hand_landmarks:
+            mp.solutions.drawing_utils.draw_landmarks(
+                frame, hand_landmarks, mp_hands.HAND_CONNECTIONS,
+                mp.solutions.drawing_utils.DrawingSpec(color=(0, 255, 0), thickness=2, circle_radius=2),
+                mp.solutions.drawing_utils.DrawingSpec(color=(0, 0, 255), thickness=2)
+            )
+    
+    # Process for prediction if needed
+    if root.show_prediction and hand_detected:
+        landmarks = extract_landmarks(frame)
+        
+        # Update debug info
+        if hasattr(root.camera_widget, 'debug_label'):
+            debug_text = f"Hand detected: {hand_detected}"
+            if landmarks is not None:
+                debug_text += f" | Landmarks shape: {landmarks.shape}"
+            root.camera_widget.debug_label.configure(text=debug_text)
+        
+        if landmarks is not None:
+            try:
+                pred, conf, prob_dict = predict_landmarks(landmarks)
+                
+                # Check if we're in learn mode with target sign
+                if root.target_sign:
+                    target_prob = prob_dict.get(root.target_sign, 0)
+                    
+                    # Debug: Print all probabilities
+                    print(f"\nCurrent probabilities:")
+                    for sign, prob in prob_dict.items():
+                        print(f"  {sign}: {prob:.1f}%")
+                    
+                    # Update feedback based on closeness
+                    if target_prob >= 80:
+                        feedback_text = f"Excellent! ({target_prob:.1f}% match)"
+                        feedback_color = (0, 255, 0)  # Green
+                        bg_color = "#00AA00"
+                    elif target_prob >= 60:
+                        feedback_text = f"Good! ({target_prob:.1f}% match)"
+                        feedback_color = (0, 200, 100)  # Yellow-green
+                        bg_color = "#44AA00"
+                    elif target_prob >= 40:
+                        feedback_text = f"Getting there ({target_prob:.1f}% match)"
+                        feedback_color = (0, 150, 255)  # Orange
+                        bg_color = "#FF8800"
+                    else:
+                        feedback_text = f"Keep trying ({target_prob:.1f}% match)"
+                        feedback_color = (0, 0, 255)  # Red
+                        bg_color = "#FF0000"
+                    
+                    # Update feedback label
+                    if hasattr(root.camera_widget, 'feedback_label'):
+                        root.camera_widget.feedback_label.configure(
+                            text=feedback_text,
+                            text_color=bg_color
+                        )
+                    
+                    # Update top predictions display
+                    if hasattr(root.camera_widget, 'prediction_labels'):
+                        # Sort probabilities in descending order
+                        sorted_probs = sorted(prob_dict.items(), key=lambda x: x[1], reverse=True)[:1]
+                        
+                        for i, (sign, prob) in enumerate(sorted_probs):
+                            # Highlight target sign
+                            if sign == root.target_sign:
+                                label_text = f"✓ {sign}: {prob:.1f}%"
+                                text_color = "#00FF00"
+                            else:
+                                label_text = f"  {sign}: {prob:.1f}%"
+                                text_color = "white"
+                            
+                            root.camera_widget.prediction_labels[i].configure(
+                                text=label_text,
+                                text_color="black",
+                                fg_color="white",          # CustomTkinter background
+                                font=("Arial", 18),# Bigger text
+                                )
+
+                    # Display on video frame
+                    cv2.putText(frame, f"Target: {root.target_sign}", (30, 50),
+                               cv2.FONT_HERSHEY_SIMPLEX, 1.0, feedback_color, 2)
+                    cv2.putText(frame, f"Match: {target_prob:.1f}%", (30, 90),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.8, feedback_color, 2)
+                    cv2.putText(frame, f"Predicted: {pred}", (30, 130),
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                else:
+                    # Live translation mode - simple display
+                    cv2.putText(frame, f"{pred} ({conf:.1f}%)", (30, 50),
+                               cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 3)
+                    
+            except Exception as e:
+                print(f"Error in prediction loop: {e}")
+                cv2.putText(frame, "Prediction error", (30, 50),
+                           cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
+    else:
+        # Show detection status
+        if not hand_detected:
+            cv2.putText(frame, "Show your hand to camera", (30, 50),
+                       cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 255), 2)
+    
+    # Convert to RGB and then to ImageTk
+    rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    img = Image.fromarray(rgb)
+    img = img.resize((500, 400), Image.Resampling.LANCZOS)
+    photo = ImageTk.PhotoImage(image=img)
+    
+    # Update label
+    root.camera_widget.video_label.configure(image=photo)
+    root.camera_widget.video_label.image = photo
+    
+    # Schedule next update
+    root.camera_widget.after(10, update_camera_frame)
+
+def stop_camera():
+    if hasattr(root, 'camera_active') and root.camera_active:
+        root.camera_active = False
+        if hasattr(root, 'cap'):
+            root.cap.release()
+        if hasattr(root.camera_widget, 'video_label'):
+            root.camera_widget.video_label.configure(image='')
+        # Clear feedback labels
+        if hasattr(root.camera_widget, 'feedback_label'):
+            root.camera_widget.feedback_label.configure(text="")
+        if hasattr(root.camera_widget, 'prediction_labels'):
+            for label in root.camera_widget.prediction_labels:
+                label.configure(text="")
+
+# =======================
+# START PAGE
+# =======================
+Start_img = PhotoImage(file="Images/Buttons/HomeBtn.png")
+start_btn = Button(
+    Start_frame,
+    image=Start_img,
+    compound="center",  # text over image
+    text="Start",
+    font=("Arial", 25),
+    bg="#ffffff",  # 
+    fg="white",
+    width=170,
+    height=80,
+    bd=0,  # remove border
+    highlightthickness=0,
+    command=lambda: switch_frame(Home_frame)
+)
+start_btn.place(x=810, y=807)
+
+# =======================
+# HOME PAGE
+# =======================
+back_btn_home = ct.CTkButton(
+    Home_frame,
+    text="◀ ",
+    font=("Arial", 14),
+    fg_color="#000000",
+    text_color="white",
+    corner_radius=12,
+    command=lambda: switch_frame(Start_frame),
+    width=50
+)
+back_btn_home.place(x=55, y=55)
+
+button_img = PhotoImage(file="Images/Buttons/startB.png")
+# Create button with image
+learn_btn = Button(
+    Home_frame,
+    image=button_img,
+    text="Learn Signs",
+    compound="center",  # text over image
+    font=("Arial", 20),
+    width=210,
+    height=100,
+    bg="#ffffff",  # 
+    fg="white",
+    bd=0,  # remove border
+    highlightthickness=0,
+    command=lambda: switch_frame(Learn_frame)
+)
+learn_btn.place(x=500, y=652)
+
+translate_btn = Button(
+    Home_frame,
+    image=button_img,
+    text="Live translation",
+    compound="center", 
+    font=("Arial", 20),
+    width=210,
+    height=100,
+    bg="#ffffff", 
+    fg="white",
+    bd=0,  # remove border
+    highlightthickness=0,
+    command=lambda: switch_frame(Translate_frame)
+)
+translate_btn.place(x=1025, y=651)
+
+Upload_frame_btn = Button(
+    Home_frame,
+    image=button_img,
+    text="Translate Image",
+    compound="center",  
+    font=("Arial", 20),
+    width=215,
+    height=98,
+    bg="#ffffff", 
+    fg="white",
+    bd=0,  # remove border
+    highlightthickness=0,
+    command=lambda: switch_frame(Upload_frame)
+)
+Upload_frame_btn.place(x=765, y=778)
+
+# =======================
+# LEARN UI
+# =======================
+back_btn_learn = ct.CTkButton(
+    Learn_frame,
+    text="◀ ",
+    font=("Arial", 14),
+    fg_color="#000000",
+    text_color="white",
+    corner_radius=12,
+    command=lambda: switch_frame(Home_frame),
+    width=50
+)
+back_btn_learn.place(x=55, y=55)
+
+selected_sign = tk.StringVar(value="A")
+learn_values = config.get("letters_numbers", []) + config.get("words", [])
+
+sign_menu = ct.CTkOptionMenu(
+    Learn_frame,
+    values=learn_values,
+    variable=selected_sign,
+    width=180,
+    height=40,
+    corner_radius=0,
+    fg_color="#98befc",
+    button_color="#98befc",
+    dropdown_fg_color="#98befc",
+    dropdown_text_color="white"
+)
+sign_menu.place(x=140, y=110)
+
+sign_img_label = ct.CTkLabel(
+    Learn_frame,
+    text="",
+    width=260,
+    height=200,
+    fg_color="white",
+)
+sign_img_label.place(x=180, y=160)
+
+def update_sign_image(*_):
+    sign_name = selected_sign.get()
+    
+    # Determine folder and extension
+    if sign_name in config.get("letters_numbers", []):
+        img_folder = "images/sign_images/"
+        img_ext = ".jpg"
+    else:
+        img_folder = "images/words_images/"
+        img_ext = ".png"
+    
+    try:
+        img = Image.open(f"{img_folder}{sign_name}{img_ext}").resize((200, 200))
+        photo = ImageTk.PhotoImage(img)
+        sign_img_label.configure(image=photo)
+        sign_img_label.image = photo
+    except:
+        # Placeholder if image not found
+        placeholder = Image.new('RGB', (2, 2), color='gray')
+        photo = ImageTk.PhotoImage(placeholder)
+        sign_img_label.configure(image=photo)
+        sign_img_label.image = photo
+
+selected_sign.trace_add("write", update_sign_image)
+update_sign_image()
+
+# Add instruction label
+# instruction_label = ct.CTkLabel(
+#     Learn_frame,
+#     text="Try to make the sign shown on the left in the camera",
+#     font=("Arial", 14),
+#     text_color="yellow"
+# )
+# instruction_label.place(x=100, y=420)
+
+# Add camera frame area
+# camera_frame_label = tk.Label(Learn_frame, text="[◉°]-Practice your sign here", 
+#                               bg="black", fg="white", font=("Arial", 12))
+# camera_frame_label.place(x=1090, y=130, width=610, height=450)
+
+# Tips label
+tips_label = ct.CTkLabel(
+    Learn_frame,
+    text="Tips:",
+    font=("Arial", 22),
+    fg_color="#e7f6f7",
+    text_color="#000000"
+)
+tips_label.place(x=135, y=450)
+
+tips_info1 = ct.CTkLabel(
+    Learn_frame,
+    text="Use your RIGHT hand",
+    font=("Arial", 18),
+    fg_color="#e7f6f7",
+    justify="left",
+    text_color="#000000"
+)
+tips_info1.place(x=145, y=495)
+
+tips_info2 = ct.CTkLabel(
+    Learn_frame,
+    text="Make sure hand is clearly visible",
+    font=("Arial", 18),
+    fg_color="#e7f6f7",
+    justify="left",
+    text_color="#000000"
+)
+tips_info2.place(x=145, y=529)
+
+tips_info3 = ct.CTkLabel(
+    Learn_frame,
+    text="Good lighting helps",
+    font=("Arial", 18),
+    fg_color="#e7f6f7",
+    justify="left",
+    text_color="#000000"
+)
+tips_info3.place(x=145, y=560)
+
+Camera_on_button_img = PhotoImage(file="Images/Buttons/cameraOn.png")
+
+start_practice_btn = Button(
+    Learn_frame,
+    image=Camera_on_button_img,
+    width=70,
+    height=60,
+    bg="#ffffff",  # 
+    bd=0,  # remove border
+    highlightthickness=0,
+    command=lambda: start_camera_in_frame(Learn_frame, show_prediction=True, target_sign=selected_sign.get())
+)
+start_practice_btn.place(x=970, y=430)
+
+Camera_off_button_img = PhotoImage(file="Images/Buttons/cameraOff.png")
+
+stop_camera_btn_learn = Button(
+    Learn_frame,
+    image=Camera_off_button_img,
+    width=90,
+    height=65,
+    bg="#ffffff",  # 
+    bd=0,  # remove border
+    highlightthickness=0,
+    command=stop_camera
+)
+stop_camera_btn_learn.place(x=960, y=525)
+
+# =======================
+# Upload UI
+# =======================
+back_btn_translate = ct.CTkButton(
+    Upload_frame,
+    text="◀ ",
+    font=("Arial", 14),
+    fg_color="#000000",
+    text_color="white",
+    corner_radius=12,
+    command=lambda: switch_frame(Home_frame),
+    width=50
+)
+back_btn_translate.place(x=55, y=55)
+
+# Camera frame area
+# translate_camera_label = ct.CTkLabel(
+#     Translate_frame,
+#     text="Live Camera",
+#     width=400,
+#     height=300,
+#     fg_color="white",
+#     corner_radius=15
+# )
+# translate_camera_label.place(x=730, y=90)
+
+# Image display area for uploaded images
+uploaded_img_label = ct.CTkLabel(
+    Upload_frame,
+    text="",
+    width=330,
+    height=330,
+    fg_color="#ffffff",
+)
+uploaded_img_label.place(x=180, y=175)
+
+result_label = ct.CTkLabel(
+    Upload_frame,
+    text="",
+    font=("Arial", 20),
+    text_color="black",
+    fg_color="white",
+    justify="left"
+)
+result_label.place(x=660, y=230)
+
+def translate_image():
+    path = filedialog.askopenfilename()
+    if not path:
+        return
+    
+    # Display the uploaded image
+    try:
+        img = Image.open(path)
+        img = img.resize((210, 180),Image.Resampling.LANCZOS)
+        photo = ImageTk.PhotoImage(img)
+        uploaded_img_label.configure(image=photo)
+        uploaded_img_label.image = photo
+    except:
+        result_label.configure(text="Error loading image")
+        return
+    
+    # Process for translation
+    cv_img = cv2.imread(path)
+    landmarks = extract_landmarks(cv_img)
+
+    if landmarks is None:
+        result_label.configure(text="No hand detected")
+        return
+
+    pred, conf, prob_dict = predict_landmarks(landmarks)
+    
+    # Show top 3 predictions
+    sorted_probs = sorted(prob_dict.items(), key=lambda x: x[1], reverse=True)[:3]
+    pred_text = f"Top Prediction: {pred} ({conf:.1f}%)\n\nOther possibilities:\n"
+    for i, (sign, prob) in enumerate(sorted_probs[1:], 1):
+        pred_text += f"{i}. {sign}: {prob:.1f}%\n"
+    
+    result_label.configure(text=pred_text)
+
+upload_btn_img = PhotoImage(file="Images/Buttons/startBtns.png")
+upload_btn = Button(
+    Upload_frame,
+    compound="center",  
+    text="UPLOAD IMAGE",
+    font=("Arial", 16),
+    fg="white",
+    image=upload_btn_img,
+    width=200,
+    height=80,
+    bg="#ffffff",  # 
+    bd=0,  # remove border
+    highlightthickness=0,
+    command=translate_image
+)
+upload_btn.place(x=285, y=850)
+
+# =======================
+# TRANSLATE UI
+# =======================
+back_btn_translate = ct.CTkButton(
+    Translate_frame,
+    text="◀ ",
+    font=("Arial", 14),
+    fg_color="#000000",
+    text_color="white",
+    corner_radius=12,
+    command=lambda: switch_frame(Home_frame),
+    width=50
+)
+back_btn_translate.place(x=55, y=55)
+
+start_camera_img = PhotoImage(file="Images/Buttons/camera_on.png")
+start_live_btn = Button(
+    Translate_frame,
+    image=start_camera_img,
+    width=160,
+    height=110,
+    bg="#ffffff",  # 
+    bd=0,  # remove border
+    highlightthickness=0,
+        command=lambda: start_camera_in_frame(
+        Translate_frame,
+        show_prediction=True,
+        target_sign=None   # Live translate mode
+    )
+)
+start_live_btn.place(x=690, y=240)
+
+stop_camera_img = PhotoImage(file="Images/Buttons/camera_off.png")
+stop_camera_btn_translate = Button(
+    Translate_frame,
+    image=stop_camera_img,
+    width=160,
+    height=100,
+    bg="#ffffff",  # 
+    bd=0,  # remove border
+    highlightthickness=0,
+    command=stop_camera
+)
+stop_camera_btn_translate.place(x=690, y=420)
+# =======================
+# START APP
+# =======================
+switch_frame(Start_frame)
+
+# Clean up on close
+def on_closing():
+    if hasattr(root, 'camera_active') and root.camera_active:
+        stop_camera()
+    root.destroy()
+
+root.protocol("WM_DELETE_WINDOW", on_closing)
+root.mainloop()
