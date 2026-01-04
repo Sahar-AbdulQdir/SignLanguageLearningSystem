@@ -7,7 +7,6 @@ import numpy as np
 import pickle
 from tkinter import PhotoImage, filedialog, Button
 import json
-ct.set_appearance_mode("dark")
 
 # =======================
 # LOAD MODEL
@@ -513,8 +512,9 @@ sign_img_label = ct.CTkLabel(
     width=260,
     height=200,
     fg_color="white",
+    corner_radius=12
 )
-sign_img_label.place(x=180, y=160)
+sign_img_label.place(x=155, y=165)
 
 def update_sign_image(*_):
     sign_name = selected_sign.get()
@@ -528,7 +528,7 @@ def update_sign_image(*_):
         img_ext = ".png"
     
     try:
-        img = Image.open(f"{img_folder}{sign_name}{img_ext}").resize((200, 200))
+        img = Image.open(f"{img_folder}{sign_name}{img_ext}").resize((400, 400))
         photo = ImageTk.PhotoImage(img)
         sign_img_label.configure(image=photo)
         sign_img_label.image = photo
@@ -541,20 +541,6 @@ def update_sign_image(*_):
 
 selected_sign.trace_add("write", update_sign_image)
 update_sign_image()
-
-# Add instruction label
-# instruction_label = ct.CTkLabel(
-#     Learn_frame,
-#     text="Try to make the sign shown on the left in the camera",
-#     font=("Arial", 14),
-#     text_color="yellow"
-# )
-# instruction_label.place(x=100, y=420)
-
-# Add camera frame area
-# camera_frame_label = tk.Label(Learn_frame, text="[◉°]-Practice your sign here", 
-#                               bg="black", fg="white", font=("Arial", 12))
-# camera_frame_label.place(x=1090, y=130, width=610, height=450)
 
 # Tips label
 tips_label = ct.CTkLabel(
@@ -639,18 +625,6 @@ back_btn_translate = ct.CTkButton(
 )
 back_btn_translate.place(x=55, y=55)
 
-# Camera frame area
-# translate_camera_label = ct.CTkLabel(
-#     Translate_frame,
-#     text="Live Camera",
-#     width=400,
-#     height=300,
-#     fg_color="white",
-#     corner_radius=15
-# )
-# translate_camera_label.place(x=730, y=90)
-
-# Image display area for uploaded images
 uploaded_img_label = ct.CTkLabel(
     Upload_frame,
     text="",
