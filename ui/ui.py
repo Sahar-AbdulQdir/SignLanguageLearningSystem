@@ -183,7 +183,7 @@ def start_camera_in_frame(frame_widget, show_prediction=False, target_sign=None)
     
     # Create video label if it doesn't exist
     if not hasattr(frame_widget, 'video_label'):
-        frame_widget.video_label = tk.Label(frame_widget, bg="white")
+        frame_widget.video_label = tk.Label(frame_widget, bg="#fbf4e4")
         frame_widget.video_label.place(x=1100, y=200, width=500, height=500)
     
     # Create feedback label for Learn mode
@@ -193,7 +193,7 @@ def start_camera_in_frame(frame_widget, show_prediction=False, target_sign=None)
             text="",
             font=("Arial", 16),
             text_color="black",
-            bg_color="#FFFFFF"
+            bg_color="#fbf4e4"
         )
         frame_widget.feedback_label.place(x=710, y=500, width=300, height=50)
     
@@ -201,11 +201,11 @@ def start_camera_in_frame(frame_widget, show_prediction=False, target_sign=None)
     # feedback for Learn mode 
     if target_sign and not hasattr(frame_widget, 'top_predictions_frame'):
         frame_widget.top_predictions_frame = ct.CTkFrame(frame_widget,
-                                                        width=270,
+                                                        width=340,
                                                         height=60,
                                                         border_color="#000000",
-                                                        fg_color="#FFFFFF")
-        frame_widget.top_predictions_frame.place(x=755, y=505)
+                                                        fg_color="#fbf4e4")
+        frame_widget.top_predictions_frame.place(x=735, y=505)
         
         # Title
         ct.CTkLabel(
@@ -222,7 +222,7 @@ def start_camera_in_frame(frame_widget, show_prediction=False, target_sign=None)
                 text="",
                 font=("Arial", 12)
             )
-            label.place(x=5, y=15)
+            label.place(x=1, y=15)
             frame_widget.prediction_labels.append(label)
     
     # Debug label
@@ -336,7 +336,7 @@ def update_camera_frame():
                             root.camera_widget.prediction_labels[i].configure(
                                 text=label_text,
                                 text_color="black",
-                                fg_color="white",          # CustomTkinter background
+                                fg_color="#fbf4e4",          # CustomTkinter background
                                 font=("Arial", 18),# Bigger text
                                 )
 
@@ -392,100 +392,96 @@ def stop_camera():
 # =======================
 # START PAGE
 # =======================
-Start_img = PhotoImage(file="Images/Buttons/HomeBtn.png")
-start_btn = Button(
+# Start_img = PhotoImage(file="Images/Buttons/HomeBtn.png")
+start_btn = ct.CTkButton(
     Start_frame,
-    image=Start_img,
-    compound="center",  # text over image
     text="Start",
-    font=("Arial", 25),
-    bg="#ffffff",  # 
-    fg="white",
-    width=170,
-    height=80,
-    bd=0,  # remove border
-    highlightthickness=0,
+    font=("Arial", 30, "bold"),
+    fg_color="#b7cbe9",  
+    text_color="black",
+    width=150,
+    height=70,
+    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    corner_radius=20,
     command=lambda: switch_frame(Home_frame)
 )
-start_btn.place(x=810, y=807)
+start_btn.place(x=510, y=550)
 
 # =======================
 # HOME PAGE
 # =======================
 back_btn_home = ct.CTkButton(
     Home_frame,
-    text="◀ ",
-    font=("Arial", 14),
-    fg_color="#000000",
+    text="◀",
+    font=("Arial", 20),
+    fg_color="#272727",
     text_color="white",
     corner_radius=12,
-    command=lambda: switch_frame(Start_frame),
-    width=50
+    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    command=lambda: switch_frame(Home_frame),
+    width=50,
+    height=50
 )
 back_btn_home.place(x=55, y=55)
 
-button_img = PhotoImage(file="Images/Buttons/startB.png")
+# button_img = PhotoImage(file="Images/Buttons/startB.png")
 # Create button with image
-learn_btn = Button(
+learn_btn = ct.CTkButton(
     Home_frame,
-    image=button_img,
     text="Learn Signs",
-    compound="center",  # text over image
     font=("Arial", 20),
-    width=210,
-    height=100,
-    bg="#ffffff",  # 
-    fg="white",
-    bd=0,  # remove border
-    highlightthickness=0,
+    width=180,
+    height=80,
+    fg_color="#ffc1f0",  # 
+    text_color="#272727",
+    corner_radius=20,
+    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
     command=lambda: switch_frame(Learn_frame)
 )
-learn_btn.place(x=500, y=652)
+learn_btn.place(x=290, y=435)
 
-translate_btn = Button(
+translate_btn = ct.CTkButton(
     Home_frame,
-    image=button_img,
     text="Live translation",
-    compound="center", 
     font=("Arial", 20),
-    width=210,
-    height=100,
-    bg="#ffffff", 
-    fg="white",
-    bd=0,  # remove border
-    highlightthickness=0,
+    width=180,
+    height=80,
+    fg_color="#ffc1f0",  # 
+    text_color="#272727",
+    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    corner_radius=20,
     command=lambda: switch_frame(Translate_frame)
 )
-translate_btn.place(x=1025, y=651)
+translate_btn.place(x=730, y=435)
 
-Upload_frame_btn = Button(
+Upload_frame_btn = ct.CTkButton(
     Home_frame,
-    image=button_img,
     text="Translate Image",
-    compound="center",  
     font=("Arial", 20),
-    width=215,
-    height=98,
-    bg="#ffffff", 
-    fg="white",
-    bd=0,  # remove border
-    highlightthickness=0,
+    width=180,
+    height=80,
+    fg_color="#ffc1f0",  # 
+    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    text_color="#272727",
+    corner_radius=20,
     command=lambda: switch_frame(Upload_frame)
 )
-Upload_frame_btn.place(x=765, y=778)
+Upload_frame_btn.place(x=525, y=538)
 
 # =======================
 # LEARN UI
 # =======================
 back_btn_learn = ct.CTkButton(
     Learn_frame,
-    text="◀ ",
-    font=("Arial", 14),
-    fg_color="#000000",
+    text="◀",
+    font=("Arial", 20),
+    fg_color="#272727",
     text_color="white",
     corner_radius=12,
+    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
     command=lambda: switch_frame(Home_frame),
-    width=50
+    width=50,
+    height=50
 )
 back_btn_learn.place(x=55, y=55)
 
@@ -496,12 +492,13 @@ sign_menu = ct.CTkOptionMenu(
     Learn_frame,
     values=learn_values,
     variable=selected_sign,
-    width=180,
+    width=320,
     height=40,
-    corner_radius=0,
-    fg_color="#98befc",
-    button_color="#98befc",
-    dropdown_fg_color="#98befc",
+    corner_radius=15,
+    fg_color="#91b6ff",
+    button_color="#91b6ff",
+    dropdown_fg_color="#91b6ff",
+    bg_color="#fbf4e4",
     dropdown_text_color="white"
 )
 sign_menu.place(x=140, y=110)
@@ -511,7 +508,7 @@ sign_img_label = ct.CTkLabel(
     text="",
     width=260,
     height=200,
-    fg_color="white",
+    fg_color="#fbf4e4",
     corner_radius=12
 )
 sign_img_label.place(x=155, y=165)
@@ -534,7 +531,7 @@ def update_sign_image(*_):
         sign_img_label.image = photo
     except:
         # Placeholder if image not found
-        placeholder = Image.new('RGB', (2, 2), color='gray')
+        placeholder = Image.new('RGB', (2, 2), color='#fbf4e4')
         photo = ImageTk.PhotoImage(placeholder)
         sign_img_label.configure(image=photo)
         sign_img_label.image = photo
@@ -547,7 +544,7 @@ tips_label = ct.CTkLabel(
     Learn_frame,
     text="Tips:",
     font=("Arial", 22),
-    fg_color="#e7f6f7",
+    fg_color="#fbf4e4",
     text_color="#000000"
 )
 tips_label.place(x=135, y=450)
@@ -556,7 +553,7 @@ tips_info1 = ct.CTkLabel(
     Learn_frame,
     text="Use your RIGHT hand",
     font=("Arial", 18),
-    fg_color="#e7f6f7",
+    fg_color="#fbf4e4",
     justify="left",
     text_color="#000000"
 )
@@ -566,7 +563,7 @@ tips_info2 = ct.CTkLabel(
     Learn_frame,
     text="Make sure hand is clearly visible",
     font=("Arial", 18),
-    fg_color="#e7f6f7",
+    fg_color="#fbf4e4",
     justify="left",
     text_color="#000000"
 )
@@ -576,34 +573,34 @@ tips_info3 = ct.CTkLabel(
     Learn_frame,
     text="Good lighting helps",
     font=("Arial", 18),
-    fg_color="#e7f6f7",
+    fg_color="#fbf4e4",
     justify="left",
     text_color="#000000"
 )
 tips_info3.place(x=145, y=560)
 
-Camera_on_button_img = PhotoImage(file="Images/Buttons/cameraOn.png")
+Camera_on_button_img = PhotoImage(file="Images/Buttons/camera_on.png")
 
 start_practice_btn = Button(
     Learn_frame,
     image=Camera_on_button_img,
     width=70,
     height=60,
-    bg="#ffffff",  # 
+    bg="#fbf4e4",  # 
     bd=0,  # remove border
     highlightthickness=0,
     command=lambda: start_camera_in_frame(Learn_frame, show_prediction=True, target_sign=selected_sign.get())
 )
 start_practice_btn.place(x=970, y=430)
 
-Camera_off_button_img = PhotoImage(file="Images/Buttons/cameraOff.png")
+Camera_off_button_img = PhotoImage(file="Images/Buttons/camera_off.png")
 
 stop_camera_btn_learn = Button(
     Learn_frame,
     image=Camera_off_button_img,
     width=90,
     height=65,
-    bg="#ffffff",  # 
+    bg="#fbf4e4",  # 
     bd=0,  # remove border
     highlightthickness=0,
     command=stop_camera
@@ -615,13 +612,15 @@ stop_camera_btn_learn.place(x=960, y=525)
 # =======================
 back_btn_translate = ct.CTkButton(
     Upload_frame,
-    text="◀ ",
-    font=("Arial", 14),
-    fg_color="#000000",
+    text="◀",
+    font=("Arial", 20),
+    fg_color="#272727",
     text_color="white",
     corner_radius=12,
+    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
     command=lambda: switch_frame(Home_frame),
-    width=50
+    width=50,
+    height=50
 )
 back_btn_translate.place(x=55, y=55)
 
@@ -630,19 +629,19 @@ uploaded_img_label = ct.CTkLabel(
     text="",
     width=330,
     height=330,
-    fg_color="#ffffff",
+    fg_color="#fbf4e4",
 )
 uploaded_img_label.place(x=180, y=175)
 
 result_label = ct.CTkLabel(
     Upload_frame,
     text="",
-    font=("Arial", 20),
+    font=("Arial", 18),
     text_color="black",
-    fg_color="white",
+    fg_color="#fbf4e4",
     justify="left"
 )
-result_label.place(x=660, y=230)
+result_label.place(x=630, y=370)
 
 def translate_image():
     path = filedialog.askopenfilename()
@@ -652,7 +651,7 @@ def translate_image():
     # Display the uploaded image
     try:
         img = Image.open(path)
-        img = img.resize((210, 180),Image.Resampling.LANCZOS)
+        img = img.resize((430, 430),Image.Resampling.LANCZOS)
         photo = ImageTk.PhotoImage(img)
         uploaded_img_label.configure(image=photo)
         uploaded_img_label.image = photo
@@ -678,71 +677,81 @@ def translate_image():
     
     result_label.configure(text=pred_text)
 
-upload_btn_img = PhotoImage(file="Images/Buttons/startBtns.png")
-upload_btn = Button(
+# upload_btn_img = PhotoImage(file="Images/Buttons/startBtns.png")
+upload_btn = ct.CTkButton(
     Upload_frame,
-    compound="center",  
     text="UPLOAD IMAGE",
     font=("Arial", 16),
-    fg="white",
-    image=upload_btn_img,
-    width=200,
-    height=80,
-    bg="#ffffff",  # 
-    bd=0,  # remove border
-    highlightthickness=0,
+    text_color="black",
+    fg_color="#b9ca84",
+    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    corner_radius=20,
+    width=150,
+    height=60,
     command=translate_image
 )
-upload_btn.place(x=285, y=850)
+upload_btn.place(x=155, y=535)
 
 # =======================
 # TRANSLATE UI
 # =======================
 back_btn_translate = ct.CTkButton(
     Translate_frame,
-    text="◀ ",
-    font=("Arial", 14),
-    fg_color="#000000",
+    text="◀",
+    font=("Arial", 20),
+    fg_color="#272727",
     text_color="white",
     corner_radius=12,
+    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
     command=lambda: switch_frame(Home_frame),
-    width=50
+    width=50,
+    height=50
 )
 back_btn_translate.place(x=55, y=55)
 
-start_camera_img = PhotoImage(file="Images/Buttons/camera_on.png")
+
+# Load the original image
+original_img = Image.open("Images/Buttons/camera_on2.png")
+
+# Resize the image to your desired size (300x140)
+resized_img = original_img.resize((100, 120), Image.Resampling.LANCZOS)
+start_camera_img = ImageTk.PhotoImage(resized_img)
+
+# Create the button
 start_live_btn = Button(
     Translate_frame,
     image=start_camera_img,
-    width=160,
-    height=110,
-    bg="#ffffff",  # 
-    bd=0,  # remove border
+    bg="#fbf4e4",
+    bd=0,
     highlightthickness=0,
-        command=lambda: start_camera_in_frame(
+    command=lambda: start_camera_in_frame(
         Translate_frame,
         show_prediction=True,
-        target_sign=None   # Live translate mode
+        target_sign=None
     )
 )
-start_live_btn.place(x=690, y=240)
+start_live_btn.place(x=890, y=200)
+# Load original image
+original_stop_img = Image.open("Images/Buttons/camera_off2.png")
 
-stop_camera_img = PhotoImage(file="Images/Buttons/camera_off.png")
+# Resize image to desired size, e.g., 250x250
+resized_stop_img = original_stop_img.resize((100, 120), Image.Resampling.LANCZOS)
+stop_camera_img = ImageTk.PhotoImage(resized_stop_img)
+
+# Create the button
 stop_camera_btn_translate = Button(
     Translate_frame,
     image=stop_camera_img,
-    width=160,
-    height=100,
-    bg="#ffffff",  # 
-    bd=0,  # remove border
+    bg="#fbf4e4",
+    bd=0,
     highlightthickness=0,
     command=stop_camera
 )
-stop_camera_btn_translate.place(x=690, y=420)
+stop_camera_btn_translate.place(x=890, y=360)
 # =======================
 # START APP
 # =======================
-switch_frame(Start_frame)
+switch_frame(Upload_frame)
 
 # Clean up on close
 def on_closing():
