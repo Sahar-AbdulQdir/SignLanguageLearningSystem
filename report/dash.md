@@ -1,3 +1,54 @@
+<style>
+  @page {
+    size: A3;
+    margin: 10px;       
+    background: #d5d1d1 !important;
+  }
+
+
+  html, body {
+    background: #d5d1d1 !important;
+    color: #000000ff !important;
+    font-size: 12px;           /* ↓ from 12.5 */
+    line-height: 1.25;         /* tighter but readable */
+    margin: 0;
+  }
+
+  h2 {
+    margin-top: 10px;
+    margin-bottom: 4px;
+    color: #000000ff !important;
+  }
+
+  h3 {
+    margin-top: 8px;
+    margin-bottom: 3px;
+    color: #ffffff !important;
+  }
+
+  ul {
+    margin: 4px 0;
+    padding-left: 16px;
+  }
+
+  li {
+    margin-bottom: 2px;
+  }
+
+  img {
+    max-width: 100%;
+    page-break-inside: avoid;
+  }
+
+  table, div {
+    page-break-inside: avoid;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
+</style>
+
 # Sign Language system – EDA & Model Evaluation Report
 
 ## 1. Overview
@@ -15,16 +66,20 @@ This report summarizes **Exploratory Data Analysis (EDA)** and **Model Evaluatio
 
 ### 2.1 & 2.2 Overview
 
-<div style="display:flex; gap:32px; align-items:flex-start; font-size:13px; color:#000000; ">
+<div style=" font-size:13px; color:#000000; ">
 
   <!-- COLUMN 1 : Source Datasets -->
   <div style="flex:1;">
 
-  <table style="width:100%;  background:#ffffff; color:#000000; border-radius:10px;">
+  <table style="width:100%;  background:#ffffff; color:#000000; ">
       <tr style="background:#000000; color:#ffffff;">
         <th style="border:1px solid #000; padding:6px;">Dataset</th>
         <th style="border:1px solid #000; padding:6px;">Description</th>
         <th style="border:1px solid #000; padding:6px;">Link</th>
+        <th style="border:1px solid #d5d1d1; background: #d5d1d1; padding:6px;"></th>
+        <th style="border:1px solid #d5d1d1; background: #d5d1d1; padding:6px;"></th>
+                <th style="border:1px solid #000; padding:6px;">Attribute</th>
+        <th style="border:1px solid #000; padding:6px;">Value</th>
       </tr>
       <tr>
         <td style="border:1px solid #000; padding:6px;"><b>American</b></td>
@@ -32,58 +87,44 @@ This report summarizes **Exploratory Data Analysis (EDA)** and **Model Evaluatio
         <td style="border:1px solid #000; padding:6px;">
           <a href="https://www.kaggle.com/datasets/grassknoted/asl-alphabet"><strong>Kaggle</strong></a>
         </td>
+        <td style="border:1px solid #d5d1d1; background: #d5d1d1; padding:6px;"></td>
+        <td style="border:1px solid #d5d1d1; background: #d5d1d1; padding:6px;"></td>
+        <td style="border:1px solid #000; padding:6px;">Landmark points per hand</td>
+        <td style="border:1px solid #000; padding:6px;">21</td>
       </tr>
       <tr>
         <td style="border:1px solid #000; padding:6px;"><b>Custom Words</b></td>
         <td style="border:1px solid #000; padding:6px;">User-defined signs</td>
         <td style="border:1px solid #000; padding:6px;">Manual</td>
+         <td style="border:1px solid #d5d1d1; background: #d5d1d1; padding:6px;"></td>
+         <td style="border:1px solid #d5d1d1; background: #d5d1d1; padding:6px;"></td>
+                <td style="border:1px solid #000; padding:6px;">Dimensions per point</td>
+        <td style="border:1px solid #000; padding:6px;">(x, y, z)</td>
       </tr>
       <tr>
         <td style="border:1px solid #000; padding:6px;"><b>Landmarks</b></td>
         <td style="border:1px solid #000; padding:6px;">Numeric hand vectors</td>
         <td style="border:1px solid #000; padding:6px;">MediaPipe</td>
+         <td style="border:1px solid #d5d1d1; background: #d5d1d1; padding:6px;"></td>
+         <td style="border:1px solid #d5d1d1; background: #d5d1d1; padding:6px;"></td>
+           <td style="border:1px solid #000; padding:6px;">Feature shape</td>
+        <td style="border:1px solid #000; padding:6px;">(samples, 21, 3)</td>
       </tr>
-  </table>
 
-  <ul style="margin-top:35px; padding-left:18px; color:#ffffff">
+  </table>
+  </div>
+
+  <!-- COLUMN 2 : Landmark Data Structure -->
+  <div style="display:flex; flex-direction:row; justify-content:space-between; gap:60px;">
+   <ul style="margin-top:8px; padding-left:18px; color:#ffffff">
       <li><b>American dataset</b> includes alphabet letters (A–Z) and numbers (0–9).</li>
       <li><b>Custom words</b> contain static word sign gestures.</li>
       <li><b>Landmarks</b> are numerical hand coordinates extracted using MediaPipe.</li>
   </ul>
-
-  </div>
-
-  <!-- COLUMN 2 : Landmark Data Structure -->
-  <div style="flex:1;">
-
-  <table style="width:100%; border-radius:15px; background:#ffffff; color:#000000;">
-      <tr style="background:#000000; color:#ffffff; border-radius:15px;">
-        <th style="border:1px solid #000; padding:6px;">Attribute</th>
-        <th style="border:1px solid #000; padding:6px;">Value</th>
-      </tr>
-      <tr>
-        <td style="border:1px solid #000; padding:6px;">Landmark points per hand</td>
-        <td style="border:1px solid #000; padding:6px;">21</td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #000; padding:6px;">Dimensions per point</td>
-        <td style="border:1px solid #000; padding:6px;">(x, y, z)</td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #000; padding:6px;">Feature shape</td>
-        <td style="border:1px solid #000; padding:6px;">(samples, 21, 3)</td>
-      </tr>
-      <tr>
-        <td style="border:1px solid #000; padding:6px;">Label type</td>
-        <td style="border:1px solid #000; padding:6px;">Integer-encoded classes</td>
-      </tr>
-  </table>
-
   <ul style="margin-top:8px; padding-left:18px; color:#ffffff">
       <li>Each hand consists of <b>21 landmark points</b> representing key joints.</li>
       <li>Each point contains <b>x, y, z</b> coordinates in 3D space.</li>
       <li>Feature array shape is <b>(samples, 21, 3)</b> for model input.</li>
-      <li>Labels are <b>integer-encoded</b> for classification.</li>
   </ul>
 
   </div>
@@ -96,35 +137,35 @@ This report summarizes **Exploratory Data Analysis (EDA)** and **Model Evaluatio
 
 <div style="
   display:flex;
-  gap:32px;
-  align-items:stretch;
+  gap:10px;
+  flex-direction:row;  
+  align-items:flex-start;  /* optional: aligns top edges */
   font-size:13px;
+  width:100%;
 ">
 
   <!-- LEFT COLUMN : TABLE -->
-  <div style="flex:1; max-width:150px; display:flex; flex-direction:column;">
+  <div style="flex:1; max-width:200px; display:flex; flex-direction:column;">
 
-<div style="margin-bottom:6px; font-weight:bold;">
+  <div style="margin-bottom:6px; font-weight:bold;">
       Table 1: Number of Classes per Dataset
     </div>
 
- <div style="
-      flex:1;
+   <div style="
       border:1px solid #000;
       border-radius:10px;
       overflow:hidden;
       display:flex;
       align-items:stretch;
+        width:20%;
     ">
-
- <table style="
+      <table style="
         width:100%;
-        height:100%;
         border-collapse:collapse;
         background:#ffffff;
         color:#000000;
       ">
-        <tr style="background:#000000; color:#ffffff;">
+        <tr style="background:#000; color:#fff;">
           <th style="border:1px solid #000; padding:8px;">Dataset</th>
           <th style="border:1px solid #000; padding:8px;">Number of Classes</th>
         </tr>
@@ -141,20 +182,18 @@ This report summarizes **Exploratory Data Analysis (EDA)** and **Model Evaluatio
           <td style="border:1px solid #000; padding:8px;">41</td>
         </tr>
       </table>
-
-</div>
+    </div>
 
   </div>
 
   <!-- RIGHT COLUMN : IMAGE -->
-  <div style="flex:3; display:flex; flex-direction:column;">
+  <div style=" display:flex; flex-direction:column;   width:80%;">
 
- <div style="margin-bottom:6px; font-weight:bold;">
+   <div style="margin-bottom:6px; font-weight:bold;">
       Figure 1: Samples per Class Distribution
     </div>
 
-<div style="
-      flex:1;
+   <div style="
       border:1px solid #000;
       border-radius:10px;
       padding:8px;
@@ -162,19 +201,19 @@ This report summarizes **Exploratory Data Analysis (EDA)** and **Model Evaluatio
       display:flex;
       align-items:center;
       justify-content:center;
+      width:300px;
     ">
-<img 
-        src="Images/md/samples_per_class.png"
+    <img 
+        src="../Images/md/samples_per_class.png"
         alt="Class Distribution Plot"
         style="
-          width:100%;
+          width:300px;
           height:100%;
           object-fit:contain;
           border-radius:6px;
         "
-    />
-
- </div>
+      />
+    </div>
 
   </div>
 
@@ -222,7 +261,7 @@ This report summarizes **Exploratory Data Analysis (EDA)** and **Model Evaluatio
       justify-content:center;
     ">
       <img
-        src="Images/md/samples_imgA.png"
+        src="../Images/md/samples_imgA.png"
         alt="Ready Dataset Sample Images"
         style="
           width:100%;
@@ -252,7 +291,7 @@ This report summarizes **Exploratory Data Analysis (EDA)** and **Model Evaluatio
       justify-content:center;
     ">
       <img
-        src="Images/md/samples_imgC.png"
+        src="../Images/md/samples_imgC.png"
         alt="Custom Dataset Sample Images"
         style="
           width:100%;
@@ -296,7 +335,7 @@ This report summarizes **Exploratory Data Analysis (EDA)** and **Model Evaluatio
   margin-bottom:16px;
 ">
   <img 
-    src="Images/md/hand_landmark_samples.png" 
+    src="../Images/md/hand_landmark_samples.png" 
     alt="Hand Landmark Samples" 
     style="
       width:100%;
@@ -384,7 +423,7 @@ This report summarizes **Exploratory Data Analysis (EDA)** and **Model Evaluatio
       background:#ffffff;
     ">
       <img 
-        src="Images/md/confusion_matrix.png" 
+        src="../Images/md/confusion_matrix.png" 
         alt="Confusion Matrix Plot"
         style="
           width:100%;
@@ -414,7 +453,7 @@ This report summarizes **Exploratory Data Analysis (EDA)** and **Model Evaluatio
   align-items: center;
 ">
   <img 
-    src="Images/md/per_class_F1.png" 
+    src="../Images/md/per_class_F1.png" 
     alt="Per-Class Metrics Plot"
     style="
       width:950px;

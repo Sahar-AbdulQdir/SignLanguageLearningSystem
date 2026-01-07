@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Language EDA & Model Report</title>
+  <style>
+    /* ===== Global Styles ===== */
+    :root {
+     --IndigoInk: #8EB3F1ff;
+    --IndigoVelvet: #E4BDE4ff;
+    --RoyalViolet: #C8A7EEff;
+    --LavenderPurple: #9d4edd;
+    --MauveMagic: #BDEFEDff;
+    --Mauve: #6D91B3ff;
+
+    
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #121212;
+      color: #E0E0E0;
+      margin: 0;
+      padding: 24px;
+      line-height: 1.6;
+    }
+    h1, h3, h3 {
+      color: #ffffff;
+      margin-top: 32px;
+      margin-bottom: 12px;
+    }
+    h1 { font-size: 28px; border-bottom: 2px solid #BDEFED; padding-bottom: 6px; }
+    h3 { font-size: 22px; }
+    h3 { font-size: 18px; }
+    p { margin-bottom: 12px; }
+
+    .glowy_border{
+      border: 1px solid #BDEFED;
+      border-radius: 8px;
+        padding: 7px;
+      box-shadow: #BDEFED 0px 0px 8px;
+    }
+
+    /* ===== Table Styles ===== */
+    table {
+    border-color: #000000;
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 8px;
+      margin-bottom: 16px;
+      border-radius: 10px;
+      overflow: hidden;
+      background-color: #ffffff;
+      color: #000000;
+    }
+    table th, table td {
+      border: 1px solid #ffffff;
+      padding: 8px;
+      text-align: left;
+      border-color: #000000;
+    }
+    table th {
+      background-color: #000000;
+      color: #BDEFED;
+    }
+    table tr:nth-child(even) {
+      background-color: #ffffff;
+    }
+
+    /* ===== Flex & Columns ===== */
+    .flex-row {
+      display: flex;
+      gap: 32px;
+      align-items: flex-start;
+      margin-bottom: 24px;
+    }
+    .flex-col {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== Notes Box ===== */
+    .notes {
+      border-left: 6px solid #BDEFED;
+      padding-left: 16px;
+      margin-bottom: 24px;
+    }
+    .notes ul {
+      padding-left: 16px;
+      margin: 0;
+    }
+
+    /* ===== Images ===== */
+    .image-box {
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: #1E1E1E;
+      padding: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+    .image-box img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 8px;
+      object-fit: contain;
+    }
+
+    /* ===== Small Boxes for Notes next to Images ===== */
+    .side-notes {
+      border-left: 6px solid #BDEFED;
+      padding-left: 12px;
+      flex: 1;
+    }
+
+
+      /* .page-break {
+        height: 5px;
+  } */
+    
+  </style>
+</head>
+<body>
+
+  <h3 class="glowy_border">Sign Language System – EDA & Model Evaluation Report</h3>
+
+  <h3 class="glowy_border">1. Overview</h3>
+  <p>This report summarizes <strong>Exploratory Data Analysis (EDA)</strong> and <strong>Model Evaluation</strong> for the hand landmark sign recognition dataset. The analysis combines:</p>
+  <ul>
+    <li><strong>American dataset</strong> (image-based signs)</li>
+    <li><strong>Custom words dataset</strong></li>
+    <li><strong>Combined landmark dataset</strong> (21-point hand landmarks)</li>
+    <li><strong>KNN classification model</strong></li>
+  </ul>
+
+  <hr>
+
+  <h3 class="glowy_border">2. Dataset Summary</h3>
+  <div class="flex-row">
+    <!-- Left Column -->
+    <div class="flex-col">
+      <h3 class="glowy_border">2.1 Source Datasets</h3>
+      <table>
+        <tr>
+          <th>Dataset</th>
+          <th>Description</th>
+          <th>Link</th>
+        </tr>
+        <tr>
+          <td><b>American</b></td>
+          <td>Standard sign dataset</td>
+          <td><a href="https://www.kaggle.com/datasets/grassknoted/asl-alphabet" style="color:#BDEFED;">Kaggle</a></td>
+        </tr>
+        <tr>
+          <td><b>Custom Words</b></td>
+          <td>User-defined signs</td>
+          <td>Manual</td>
+        </tr>
+        <tr>
+          <td><b>Landmarks</b></td>
+          <td>Numeric hand vectors</td>
+          <td>MediaPipe</td>
+        </tr>
+      </table>
+      <div class="notes">
+        <ul>
+          <li><b>American dataset</b> includes alphabet letters (A–Z) and numbers (0–9).</li>
+          <li><b>Custom words</b> contain static word sign gestures.</li>
+          <li><b>Landmarks</b> are numerical hand coordinates extracted using MediaPipe.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="flex-col">
+      <h3 class="glowy_border">2.2 Landmark Data Structure</h3>
+      <table>
+        <tr>
+          <th>Attribute</th>
+          <th>Value</th>
+        </tr>
+        <tr>
+          <td>Landmark points per hand</td>
+          <td>21</td>
+        </tr>
+        <tr>
+          <td>Dimensions per point</td>
+          <td>(x, y, z)</td>
+        </tr>
+        <tr>
+          <td>Feature shape</td>
+          <td>(samples, 21, 3)</td>
+        </tr>
+      </table>
+      <div class="notes">
+        <ul>
+          <li>Each hand consists of <b>21 landmark points</b> representing key joints.</li>
+          <li>Each point contains <b>x, y, z</b> coordinates in 3D space.</li>
+          <li>Feature array shape is <b>(samples, 21, 3)</b> for model input.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <h3 class="glowy_border">3. Class Distribution Analysis (EDA)</h3>
+
+  <div class="flex-row">
+    <!-- Table -->
+    <div style="flex:1;">
+      <h3 class="glowy_border">Number of Classes per Dataset</h3>
+      <table style="height: 320px;">
+        <tr>
+          <th>Dataset</th>
+          <th>Number of Classes</th>
+        </tr>
+        <tr>
+          <td>American Dataset</td>
+          <td>36</td>
+        </tr>
+        <tr>
+          <td>Custom Words Dataset</td>
+          <td>5</td>
+        </tr>
+        <tr>
+          <td>Combined Dataset</td>
+          <td>41</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Image -->
+    <div style="flex:2;">
+      <h3 class="glowy_border">Samples per Class Distribution</h3>
+      <div class="image-box">
+        <img src="../Images/md/samples_per_class.png" alt="Class Distribution Plot">
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <ul>
+      <li>The dataset exhibits a <b>strong class imbalance</b> across gesture categories.</li>
+      <li><b>Alphabet classes (A–Z)</b> dominate the dataset, with <b>thousands of samples per class</b>.</li>
+      <li><b>Numeric classes (0–9)</b> contain significantly fewer samples, mostly under <b>300</b>.</li>
+      <li><b>Custom word classes</b> are uniformly small, with <b>50 samples per class</b>.</li>
+    </ul>
+  </div>
+
+  <div></div>
+<!-- <div class="page-break"></div> -->
+
+  <h3 class="glowy_border">Sample Images from Datasets</h3>
+  <div class="flex-row">
+    <div class="flex-col">
+      <h4>Ready Dataset</h4>
+      <div class="image-box">
+        <img src="../Images/md/samples_imgA.png" alt="Ready Dataset Sample">
+      </div>
+    </div>
+    <div class="flex-col">
+      <h4>Custom Dataset</h4>
+      <div class="image-box">
+        <img src="../Images/md/samples_imgC.png" alt="Custom Dataset Sample">
+      </div>
+    </div>
+  </div>
+
+  <div class="notes">
+    <ul>
+      <li>Ready dataset samples originate from a standardized sign language dataset.</li>
+      <li>Custom dataset samples were manually collected to represent user-defined gestures.</li>
+      <li>Lighting and hand orientation vary across samples.</li>
+      <li>Some classes show high visual similarity.</li>
+    </ul>
+  </div>
+
+  <h3 class="glowy_border">4. Visual Data Exploration</h3>
+  <h3>Hand Landmark Samples</h3>
+  <div class="image-box">
+    <img src="../Images/md/hand_landmark_samples.png" alt="Hand Landmark Samples">
+  </div>
+  <div class="notes">
+    <ul>
+      <li>Visualizes <b>21 key hand landmarks</b> per sample using a <b>5-finger mapping</b>.</li>
+      <li>Helps detect <b>outliers, inconsistencies, or misaligned landmarks</b> before model training.</li>
+    </ul>
+  </div>
+
+  <h3 class="glowy_border">5. Model Evaluation (KNN Classifier)</h3>
+
+  <h3>Normalized Confusion Matrix</h3>
+  <div class="flex-row">
+    <div class="side-notes">
+      <ul style="width: 450px;">
+        <li><b>Overall Accuracy:</b> Most classes are classified perfectly (1.0) or very close.</li>
+        <li><b>Minor Misclassifications:</b>
+          <ul>
+            <li>Class 2 → 0.14 misclassified as v</li>
+            <li>Class 6 → 0.33 misclassified as v</li>
+            <li>Class 7 → 0.05 misclassified as 2 and f</li>
+            <li>Class 9 → 0.12 misclassified as f</li>
+            <li>Class Hello → 0.1 misclassified as 4</li>
+            <li>Class p → 0.01 misclassified as h</li>
+          </ul>
+        </li>
+        <li><b>Patterns:</b> Confusions occur mainly between visually similar hand signs.</li>
+      </ul>
+    </div>
+    <div style="flex:2.2;">
+      <div class="image-box" style="width: 500px;">
+        <img src="../Images/md/confusion_matrix.png" alt="Confusion Matrix">
+      </div>
+    </div>
+  </div>
+
+  <h3 class="glowy_border">Per-Class Performance Metrics</h3>
+  <div class="image-box">
+    <img src="../Images/md/per_class_F1.png" alt="Per-Class Metrics">
+  </div>
+  <div class="notes">
+    <ul>
+      <li>The model performs exceptionally well, most classes achieve perfect F1-scores.</li>
+      <li>A few classes with low samples (2,6,9,Hello,p) show slight misclassification.</li>
+      <li>Custom words (Calm Down, Mother, Stop, Where) are recognized accurately (F1 ≥ 0.95).</li>
+    </ul>
+  </div>
+
+  <h3 class="glowy_border">Global Metrics</h3>
+  <div class="flex-row">
+    <div class="side-notes">
+      <ul>
+        <li>Overall Accuracy: <b>100%</b></li>
+        <li>Weighted F1-score: <b>1.0</b></li>
+        <li>Macro F1-score: <b>0.99</b></li>
+      </ul>
+    </div>
+    <div style="flex:1;">
+      <table>
+        <tr>
+          <th>Metric</th>
+          <th>Score</th>
+        </tr>
+        <tr>
+          <td>Macro F1</td>
+          <td>0.99</td>
+        </tr>
+        <tr>
+          <td>Weighted F1</td>
+          <td>1.0</td>
+        </tr>
+        <tr>
+          <td>Accuracy</td>
+          <td>1.0</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <hr>
+  <p style="font-size:13px; color:#888;">_Report generated from automated EDA and evaluation pipelines._</p>
+
+</body>
+</html>

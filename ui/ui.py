@@ -751,7 +751,7 @@ stop_camera_btn_translate.place(x=890, y=360)
 # =======================
 # START APP
 # =======================
-switch_frame(Upload_frame)
+switch_frame(Start_frame)
 
 # Clean up on close
 def on_closing():
