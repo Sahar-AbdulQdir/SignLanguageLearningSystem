@@ -114,5 +114,5 @@ if __name__ == "__main__":
     for word in CUSTOM_WORDS:
         collect_word_data(word)
 
-    print("✅ All words collected successfully!")
+    print("Done")
 
