@@ -1,3 +1,4 @@
+# import necessary libraries
 import tkinter as tk
 import customtkinter as ct
 from PIL import Image, ImageTk
@@ -8,9 +9,8 @@ import pickle
 from tkinter import PhotoImage, filedialog, Button
 import json
 
-# =======================
-# LOAD MODEL
-# =======================
+# load model and configuration
+#region
 try:
     # Load the combined model
     with open("models/knn_combined_model.pkl", "rb") as f:
@@ -33,10 +33,9 @@ except Exception as e:
         "letters_numbers": ["A", "B", "C", "1", "2", "3"],
         "words": ["HELLO", "THANK YOU", "YES", "NO"]
     }
+#endregion
 
-# =======================
-# MEDIAPIPE SETUP
-# =======================
+# MediaPipe Hands setup
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
     static_image_mode=False,
@@ -45,9 +44,8 @@ hands = mp_hands.Hands(
     min_tracking_confidence=0.5
 )
 
-# =======================
-# HELPERS
-# =======================
+# helper functions
+#region
 def extract_landmarks(frame):
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     result = hands.process(rgb)
@@ -76,7 +74,7 @@ def extract_landmarks(frame):
         landmarks[i+1] -= base_y
         landmarks[i+2] -= base_z
 
-    # FORCE RIGHT HAND (as in training)
+    # If left hand, flip x-coordinates
     if handedness == "Left":
         print("Left hand detected, flipping to right...")
         for i in range(0, len(landmarks), 3):
@@ -84,8 +82,8 @@ def extract_landmarks(frame):
 
     landmarks = np.array(landmarks)
     
-    # Scale normalization (using distance between wrist and index finger MCP)
-    if len(landmarks) >= 6:  # Make sure we have enough landmarks
+    # Scale normalization 
+    if len(landmarks) >= 6:  # Make sure there is enough landmarks
         scale = np.linalg.norm(landmarks[3:6]) + 1e-6
         landmarks = landmarks / scale
     else:
@@ -93,7 +91,9 @@ def extract_landmarks(frame):
         return None
         
     return landmarks
+#endregion
 
+# Predict landmarks
 def predict_landmarks(landmarks):
     try:
         X = landmarks.reshape(1, -1)
@@ -114,16 +114,13 @@ def predict_landmarks(landmarks):
         dummy_probs["A"] = 100  # Default to A for testing
         return "A", 100, dummy_probs
 
-# =======================
-# APP SETUP
-# =======================
+# app setup
+#region
 root = ct.CTk()
 root.geometry("1200x700")
 root.title("Sign Language App")
 
-# =======================
-# FRAMES
-# =======================
+# frames setup
 Start_frame = ct.CTkFrame(root)
 Home_frame = ct.CTkFrame(root)
 Learn_frame = ct.CTkFrame(root)
@@ -133,9 +130,7 @@ Upload_frame = ct.CTkFrame(root)
 for frame in (Start_frame, Home_frame, Learn_frame, Translate_frame, Upload_frame):
     frame.place(relwidth=1, relheight=1)
 
-# =======================
-# BACKGROUND HANDLER
-# =======================
+# set background images
 def set_bg(frame, path):
     try:
         img = Image.open(path)
@@ -159,18 +154,16 @@ set_bg(Learn_frame, "Images/Backgrounds/Learn_page.png")
 set_bg(Translate_frame, "Images/Backgrounds/Translate_page.png")
 set_bg(Upload_frame, "Images/Backgrounds/Upload_page.png")
 
-# =======================
-# FRAME SWITCHING
-# =======================
+# frame switching
 def switch_frame(frame):
     # Stop camera if running
     if hasattr(root, 'camera_active') and root.camera_active:
         stop_camera()
     frame.tkraise()
+#endregion
 
-# =======================
-# CAMERA FUNCTIONS
-# =======================
+# camera functions
+#region
 def start_camera_in_frame(frame_widget, show_prediction=False, target_sign=None):
     """Start camera and display it inside the given widget"""
     if hasattr(root, 'camera_active') and root.camera_active:
@@ -388,11 +381,13 @@ def stop_camera():
         if hasattr(root.camera_widget, 'prediction_labels'):
             for label in root.camera_widget.prediction_labels:
                 label.configure(text="")
+#endregion
 
+# setup UI components
 # =======================
-# START PAGE
+# start page
 # =======================
-# Start_img = PhotoImage(file="Images/Buttons/HomeBtn.png")
+#region
 start_btn = ct.CTkButton(
     Start_frame,
     text="Start",
@@ -407,9 +402,12 @@ start_btn = ct.CTkButton(
 )
 start_btn.place(x=510, y=550)
 
+# endregion
+
 # =======================
-# HOME PAGE
+# home page
 # =======================
+#region
 back_btn_home = ct.CTkButton(
     Home_frame,
     text="◀",
@@ -424,8 +422,6 @@ back_btn_home = ct.CTkButton(
 )
 back_btn_home.place(x=55, y=55)
 
-# button_img = PhotoImage(file="Images/Buttons/startB.png")
-# Create button with image
 learn_btn = ct.CTkButton(
     Home_frame,
     text="Learn Signs",
@@ -467,10 +463,12 @@ Upload_frame_btn = ct.CTkButton(
     command=lambda: switch_frame(Upload_frame)
 )
 Upload_frame_btn.place(x=525, y=538)
+#endregion
 
 # =======================
-# LEARN UI
+# learn page
 # =======================
+#region
 back_btn_learn = ct.CTkButton(
     Learn_frame,
     text="◀",
@@ -606,10 +604,12 @@ stop_camera_btn_learn = Button(
     command=stop_camera
 )
 stop_camera_btn_learn.place(x=960, y=525)
+#endregion
 
 # =======================
-# Upload UI
+# upload page
 # =======================
+#region
 back_btn_translate = ct.CTkButton(
     Upload_frame,
     text="◀",
@@ -691,10 +691,11 @@ upload_btn = ct.CTkButton(
     command=translate_image
 )
 upload_btn.place(x=155, y=535)
-
+#endregion
 # =======================
-# TRANSLATE UI
+# translate UI
 # =======================
+#region
 back_btn_translate = ct.CTkButton(
     Translate_frame,
     text="◀",
@@ -708,7 +709,6 @@ back_btn_translate = ct.CTkButton(
     height=50
 )
 back_btn_translate.place(x=55, y=55)
-
 
 # Load the original image
 original_img = Image.open("Images/Buttons/camera_on2.png")
@@ -748,8 +748,9 @@ stop_camera_btn_translate = Button(
     command=stop_camera
 )
 stop_camera_btn_translate.place(x=890, y=360)
+#endregion
 # =======================
-# START APP
+# start app
 # =======================
 switch_frame(Start_frame)
 

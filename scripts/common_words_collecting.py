@@ -22,9 +22,7 @@ hands = mp_hands.Hands(
     min_detection_confidence=0.7
 )
 
-# =======================
 # COLLECT STATIC WORD DATA
-# =======================
 def collect_word_data(word):
     print(f"\nCollecting static sign for: {word}")
     word_dir = os.path.join(OUTPUT_DIR, word)
@@ -107,9 +105,7 @@ def collect_word_data(word):
         print(f"Saved {len(collected)} samples for {word}")
 
 
-# =======================
 # START COLLECTION
-# =======================
 if __name__ == "__main__":
     for word in CUSTOM_WORDS:
         collect_word_data(word)

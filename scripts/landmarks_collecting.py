@@ -63,7 +63,7 @@ for label in os.listdir(DATASET_PATH):
             landmarks[i+1] -= base_y
             landmarks[i+2] -= base_z
 
-        # 👉 FORCE RIGHT HAND
+        # Force right hand
         # If detected hand is LEFT, flip x-axis
         if handedness == "Left":
             for i in range(0, len(landmarks), 3):
