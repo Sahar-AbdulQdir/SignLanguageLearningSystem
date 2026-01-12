@@ -1,4 +1,6 @@
-# import necessary libraries
+# ·············································
+# :      Import necessary libraries           :
+# ·············································
 import tkinter as tk
 import customtkinter as ct
 from PIL import Image, ImageTk
@@ -9,11 +11,14 @@ import pickle
 from tkinter import PhotoImage, filedialog, Button
 import json
 
-# load model and configuration
+# ·············································
+# :      load model and configuratio          :
+# ·············································
+
 #region
 try:
     # Load the combined model
-    with open("models/knn_combined_model.pkl", "rb") as f:
+    with open("models/knn_combined_model.pkl2", "rb") as f:
         data = pickle.load(f)
     model = data["model"]
     all_classes = data["all_classes"]  # This now includes words
@@ -35,7 +40,9 @@ except Exception as e:
     }
 #endregion
 
-# MediaPipe Hands setup
+# ·············································
+# :      Initializing MediaPipe Hands         :
+# ·············································
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
     static_image_mode=False,
@@ -44,7 +51,9 @@ hands = mp_hands.Hands(
     min_tracking_confidence=0.5
 )
 
-# helper functions
+# ·············································
+# :      Helpers for landmark extraction       :
+# ·············································
 #region
 def extract_landmarks(frame):
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -92,6 +101,7 @@ def extract_landmarks(frame):
         
     return landmarks
 #endregion
+
 
 # Predict landmarks
 def predict_landmarks(landmarks):
@@ -384,9 +394,9 @@ def stop_camera():
 #endregion
 
 # setup UI components
-# =======================
-# start page
-# =======================
+# ·············································
+# :                 start page                :
+# ·············································
 #region
 start_btn = ct.CTkButton(
     Start_frame,
@@ -404,9 +414,9 @@ start_btn.place(x=510, y=550)
 
 # endregion
 
-# =======================
-# home page
-# =======================
+# ·············································
+# :                 Home page                :
+# ·············································
 #region
 back_btn_home = ct.CTkButton(
     Home_frame,
@@ -465,9 +475,9 @@ Upload_frame_btn = ct.CTkButton(
 Upload_frame_btn.place(x=525, y=538)
 #endregion
 
-# =======================
-# learn page
-# =======================
+# ·············································
+# :               Learn page                :
+# ·············································
 #region
 back_btn_learn = ct.CTkButton(
     Learn_frame,
@@ -606,9 +616,9 @@ stop_camera_btn_learn = Button(
 stop_camera_btn_learn.place(x=960, y=525)
 #endregion
 
-# =======================
-# upload page
-# =======================
+# ·············································
+# :                 upload page                :
+# ·············································
 #region
 back_btn_translate = ct.CTkButton(
     Upload_frame,
@@ -692,9 +702,9 @@ upload_btn = ct.CTkButton(
 )
 upload_btn.place(x=155, y=535)
 #endregion
-# =======================
-# translate UI
-# =======================
+# ·············································
+# :               Translate page              :
+# ·············································
 #region
 back_btn_translate = ct.CTkButton(
     Translate_frame,
@@ -749,9 +759,9 @@ stop_camera_btn_translate = Button(
 )
 stop_camera_btn_translate.place(x=890, y=360)
 #endregion
-# =======================
-# start app
-# =======================
+# ·············································
+# :                 Start app                 :
+# ·············································
 switch_frame(Start_frame)
 
 # Clean up on close

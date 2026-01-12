@@ -1,11 +1,15 @@
+# ·············································
+# :      Importing required libraries          :
+# ·············································
 import os
 import cv2
 import numpy as np
 import mediapipe as mp
 
-# =======================
-# CONFIGURATION
-# =======================
+# ·············································
+# :    Defining configuration settings        :
+# ·············································
+
 CUSTOM_WORDS = [
     "Hello", "Mother", "Where", "Stop",
     "Calm Down"]
@@ -14,7 +18,9 @@ SAMPLES_PER_WORD = 50
 OUTPUT_DIR = "data/custom_words/"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# MediaPipe
+# ·············································
+# :      Initializing MediaPipe Hands         :
+# ·············································
 mp_hands = mp.solutions.hands
 hands = mp_hands.Hands(
     static_image_mode=True,
@@ -22,8 +28,11 @@ hands = mp_hands.Hands(
     min_detection_confidence=0.7
 )
 
-# COLLECT STATIC WORD DATA
+# ·············································
+# :      Collecting static sign data          :
+# ·············································
 def collect_word_data(word):
+    # Creating directories and initializing camera and storage for samples
     print(f"\nCollecting static sign for: {word}")
     word_dir = os.path.join(OUTPUT_DIR, word)
     os.makedirs(word_dir, exist_ok=True)
@@ -31,11 +40,13 @@ def collect_word_data(word):
     cap = cv2.VideoCapture(0)
     collected = []
 
+    # Capturing frames until the required number of samples is reached
     while len(collected) < SAMPLES_PER_WORD:
         ret, frame = cap.read()
         if not ret:
             break
 
+        # Flipping frame, processing hand landmarks, and preparing display output
         frame = cv2.flip(frame, 1)
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         result = hands.process(rgb)
@@ -48,6 +59,7 @@ def collect_word_data(word):
         cv2.putText(display, "SPACE = capture | Q = quit", (20, 120),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255,255,255), 2)
 
+        # Detecting hand landmarks and drawing them on the frame
         if result.multi_hand_landmarks and result.multi_handedness:
             hand = result.multi_hand_landmarks[0]
             handedness = result.multi_handedness[0].classification[0].label
@@ -59,24 +71,25 @@ def collect_word_data(word):
         cv2.imshow(f"Collecting {word}", display)
         key = cv2.waitKey(1) & 0xFF
 
+        # Capturing landmarks, normalizing them, and saving samples on key press
         if key == ord(' ') and result.multi_hand_landmarks:
             landmarks = []
             for lm in hand.landmark:
                 landmarks.extend([lm.x, lm.y, lm.z])
 
-            # Normalize to wrist
+            # Normalizing landmarks relative to the wrist
             base_x, base_y, base_z = landmarks[0:3]
             for i in range(0, 63, 3):
                 landmarks[i]   -= base_x
                 landmarks[i+1] -= base_y
                 landmarks[i+2] -= base_z
 
-            # Force right hand
+            # Converting all samples to a consistent right-hand orientation
             if handedness == "Left":
                 for i in range(0, 63, 3):
                     landmarks[i] *= -1
 
-            # Scale normalization
+            # Applying scale normalization for consistency across samples
             landmarks = np.array(landmarks)
             scale = np.linalg.norm(landmarks[3:6]) + 1e-6
             landmarks = landmarks / scale
@@ -93,6 +106,7 @@ def collect_word_data(word):
         elif key == ord('q'):
             break
 
+    # Releasing resources and saving collected landmark data
     cap.release()
     cv2.destroyAllWindows()
 
@@ -105,10 +119,11 @@ def collect_word_data(word):
         print(f"Saved {len(collected)} samples for {word}")
 
 
-# START COLLECTION
+# ·············································
+# :      Starting the data collection         :
+# ·············································
 if __name__ == "__main__":
     for word in CUSTOM_WORDS:
         collect_word_data(word)
 
     print("Done")
-
