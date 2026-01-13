@@ -18,7 +18,7 @@ import json
 #region
 try:
     # Load the combined model
-    with open("models/knn_combined_model.pkl2", "rb") as f:
+    with open("models/knn_combined_model2.pkl", "rb") as f:
         data = pickle.load(f)
     model = data["model"]
     all_classes = data["all_classes"]  # This now includes words
@@ -186,7 +186,7 @@ def start_camera_in_frame(frame_widget, show_prediction=False, target_sign=None)
     
     # Create video label if it doesn't exist
     if not hasattr(frame_widget, 'video_label'):
-        frame_widget.video_label = tk.Label(frame_widget, bg="#fbf4e4")
+        frame_widget.video_label = tk.Label(frame_widget, bg="#cae8ff")
         frame_widget.video_label.place(x=1100, y=200, width=500, height=500)
     
     # Create feedback label for Learn mode
@@ -196,7 +196,7 @@ def start_camera_in_frame(frame_widget, show_prediction=False, target_sign=None)
             text="",
             font=("Arial", 16),
             text_color="black",
-            bg_color="#fbf4e4"
+            bg_color="#cae8ff"
         )
         frame_widget.feedback_label.place(x=710, y=500, width=300, height=50)
     
@@ -207,7 +207,7 @@ def start_camera_in_frame(frame_widget, show_prediction=False, target_sign=None)
                                                         width=340,
                                                         height=60,
                                                         border_color="#000000",
-                                                        fg_color="#fbf4e4")
+                                                        fg_color="#cae8ff")
         frame_widget.top_predictions_frame.place(x=735, y=505)
         
         # Title
@@ -339,7 +339,7 @@ def update_camera_frame():
                             root.camera_widget.prediction_labels[i].configure(
                                 text=label_text,
                                 text_color="black",
-                                fg_color="#fbf4e4",          # CustomTkinter background
+                                fg_color="#cae8ff",          # CustomTkinter background
                                 font=("Arial", 18),# Bigger text
                                 )
 
@@ -402,11 +402,11 @@ start_btn = ct.CTkButton(
     Start_frame,
     text="Start",
     font=("Arial", 30, "bold"),
-    fg_color="#b7cbe9",  
-    text_color="black",
+    fg_color="#f4f6fc",  
+    text_color="#050a30",
     width=150,
     height=70,
-    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    background_corner_colors=("#cae8ff", "#cae8ff", "#cae8ff", "#cae8ff"),
     corner_radius=20,
     command=lambda: switch_frame(Home_frame)
 )
@@ -425,7 +425,7 @@ back_btn_home = ct.CTkButton(
     fg_color="#272727",
     text_color="white",
     corner_radius=12,
-    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    background_corner_colors=("#cae8ff", "#cae8ff", "#cae8ff", "#cae8ff"),
     command=lambda: switch_frame(Home_frame),
     width=50,
     height=50
@@ -438,10 +438,10 @@ learn_btn = ct.CTkButton(
     font=("Arial", 20),
     width=180,
     height=80,
-    fg_color="#ffc1f0",  # 
-    text_color="#272727",
+    fg_color="#12229d",  # 
+    text_color="#f4f6fc",
     corner_radius=20,
-    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    background_corner_colors=("#cae8ff", "#cae8ff", "#cae8ff", "#cae8ff"),
     command=lambda: switch_frame(Learn_frame)
 )
 learn_btn.place(x=290, y=435)
@@ -452,9 +452,9 @@ translate_btn = ct.CTkButton(
     font=("Arial", 20),
     width=180,
     height=80,
-    fg_color="#ffc1f0",  # 
-    text_color="#272727",
-    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    fg_color="#12229d",  # 
+    text_color="#f4f6fc",
+    background_corner_colors=("#cae8ff", "#cae8ff", "#cae8ff", "#cae8ff"),
     corner_radius=20,
     command=lambda: switch_frame(Translate_frame)
 )
@@ -466,9 +466,9 @@ Upload_frame_btn = ct.CTkButton(
     font=("Arial", 20),
     width=180,
     height=80,
-    fg_color="#ffc1f0",  # 
-    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
-    text_color="#272727",
+    fg_color="#12229d",  # 
+    background_corner_colors=("#cae8ff", "#cae8ff", "#cae8ff", "#cae8ff"),
+    text_color="#f4f6fc",
     corner_radius=20,
     command=lambda: switch_frame(Upload_frame)
 )
@@ -486,7 +486,7 @@ back_btn_learn = ct.CTkButton(
     fg_color="#272727",
     text_color="white",
     corner_radius=12,
-    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    background_corner_colors=("#cae8ff", "#cae8ff", "#cae8ff", "#cae8ff"),
     command=lambda: switch_frame(Home_frame),
     width=50,
     height=50
@@ -503,10 +503,10 @@ sign_menu = ct.CTkOptionMenu(
     width=320,
     height=40,
     corner_radius=15,
-    fg_color="#91b6ff",
-    button_color="#91b6ff",
-    dropdown_fg_color="#91b6ff",
-    bg_color="#fbf4e4",
+    fg_color="#050a30",
+    button_color="#050a30",
+    dropdown_fg_color="#050a30",
+    bg_color="#cae8ff",
     dropdown_text_color="white"
 )
 sign_menu.place(x=140, y=110)
@@ -516,7 +516,7 @@ sign_img_label = ct.CTkLabel(
     text="",
     width=260,
     height=200,
-    fg_color="#fbf4e4",
+    fg_color="#cae8ff",
     corner_radius=12
 )
 sign_img_label.place(x=155, y=165)
@@ -539,7 +539,7 @@ def update_sign_image(*_):
         sign_img_label.image = photo
     except:
         # Placeholder if image not found
-        placeholder = Image.new('RGB', (2, 2), color='#fbf4e4')
+        placeholder = Image.new('RGB', (2, 2), color='#cae8ff')
         photo = ImageTk.PhotoImage(placeholder)
         sign_img_label.configure(image=photo)
         sign_img_label.image = photo
@@ -552,7 +552,7 @@ tips_label = ct.CTkLabel(
     Learn_frame,
     text="Tips:",
     font=("Arial", 22),
-    fg_color="#fbf4e4",
+    fg_color="#cae8ff",
     text_color="#000000"
 )
 tips_label.place(x=135, y=450)
@@ -561,7 +561,7 @@ tips_info1 = ct.CTkLabel(
     Learn_frame,
     text="Use your RIGHT hand",
     font=("Arial", 18),
-    fg_color="#fbf4e4",
+    fg_color="#cae8ff",
     justify="left",
     text_color="#000000"
 )
@@ -571,7 +571,7 @@ tips_info2 = ct.CTkLabel(
     Learn_frame,
     text="Make sure hand is clearly visible",
     font=("Arial", 18),
-    fg_color="#fbf4e4",
+    fg_color="#cae8ff",
     justify="left",
     text_color="#000000"
 )
@@ -581,7 +581,7 @@ tips_info3 = ct.CTkLabel(
     Learn_frame,
     text="Good lighting helps",
     font=("Arial", 18),
-    fg_color="#fbf4e4",
+    fg_color="#cae8ff",
     justify="left",
     text_color="#000000"
 )
@@ -594,7 +594,7 @@ start_practice_btn = Button(
     image=Camera_on_button_img,
     width=70,
     height=60,
-    bg="#fbf4e4",  # 
+    bg="#cae8ff",  # 
     bd=0,  # remove border
     highlightthickness=0,
     command=lambda: start_camera_in_frame(Learn_frame, show_prediction=True, target_sign=selected_sign.get())
@@ -608,7 +608,7 @@ stop_camera_btn_learn = Button(
     image=Camera_off_button_img,
     width=90,
     height=65,
-    bg="#fbf4e4",  # 
+    bg="#cae8ff",  # 
     bd=0,  # remove border
     highlightthickness=0,
     command=stop_camera
@@ -627,7 +627,7 @@ back_btn_translate = ct.CTkButton(
     fg_color="#272727",
     text_color="white",
     corner_radius=12,
-    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    background_corner_colors=("#cae8ff", "#cae8ff", "#cae8ff", "#cae8ff"),
     command=lambda: switch_frame(Home_frame),
     width=50,
     height=50
@@ -639,7 +639,7 @@ uploaded_img_label = ct.CTkLabel(
     text="",
     width=330,
     height=330,
-    fg_color="#fbf4e4",
+    fg_color="#cae8ff",
 )
 uploaded_img_label.place(x=180, y=175)
 
@@ -648,7 +648,7 @@ result_label = ct.CTkLabel(
     text="",
     font=("Arial", 18),
     text_color="black",
-    fg_color="#fbf4e4",
+    fg_color="#cae8ff",
     justify="left"
 )
 result_label.place(x=630, y=370)
@@ -692,9 +692,9 @@ upload_btn = ct.CTkButton(
     Upload_frame,
     text="UPLOAD IMAGE",
     font=("Arial", 16),
-    text_color="black",
-    fg_color="#b9ca84",
-    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    text_color="white",
+    fg_color="#050a30",
+    background_corner_colors=("#cae8ff", "#cae8ff", "#cae8ff", "#cae8ff"),
     corner_radius=20,
     width=150,
     height=60,
@@ -713,7 +713,7 @@ back_btn_translate = ct.CTkButton(
     fg_color="#272727",
     text_color="white",
     corner_radius=12,
-    background_corner_colors=("#fbf4e4", "#fbf4e4", "#fbf4e4", "#fbf4e4"),
+    background_corner_colors=("#cae8ff", "#cae8ff", "#cae8ff", "#cae8ff"),
     command=lambda: switch_frame(Home_frame),
     width=50,
     height=50
@@ -731,7 +731,7 @@ start_camera_img = ImageTk.PhotoImage(resized_img)
 start_live_btn = Button(
     Translate_frame,
     image=start_camera_img,
-    bg="#fbf4e4",
+    bg="#cae8ff",
     bd=0,
     highlightthickness=0,
     command=lambda: start_camera_in_frame(
@@ -752,7 +752,7 @@ stop_camera_img = ImageTk.PhotoImage(resized_stop_img)
 stop_camera_btn_translate = Button(
     Translate_frame,
     image=stop_camera_img,
-    bg="#fbf4e4",
+    bg="#cae8ff",
     bd=0,
     highlightthickness=0,
     command=stop_camera
