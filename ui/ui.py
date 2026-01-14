@@ -18,7 +18,7 @@ import json
 #region
 try:
     # Load the combined model
-    with open("models/knn_combined_model2.pkl", "rb") as f:
+    with open("models/knn_combined_model.pkl", "rb") as f:
         data = pickle.load(f)
     model = data["model"]
     all_classes = data["all_classes"]  # This now includes words
