@@ -1,7 +1,7 @@
 ## ✎ Sign Language Learning & Translation App
 ## 📸 Application Demo
 
-![Sign Language App Demo](../images/md/demo.png)
+![Sign Language App Demo](Images/md/demo.png)
 
 ### ◼ Overview
 
